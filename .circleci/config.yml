@@ -128,3 +128,24 @@ jobs:
           command: |
             . venv/bin/activate
             pydocstyle shimmer tests
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - black:
+          requires:
+            - build
+      - flake8:
+          requires:
+            - build
+      - mypy:
+          requires:
+            - build
+      - pydocstyle:
+          requires:
+            - build
