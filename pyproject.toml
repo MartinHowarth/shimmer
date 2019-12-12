@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "shimmer"
+version = "0.1.0"
+description = "An easy to use game engine, based on cocos2d and pyglet."
+
+license = "MIT"
+
+authors = [
+    "Martin Howarth <howarth.martin@gmail.com>"
+]
+
+readme = 'README.md'
+
+repository = "https://github.com/MartinHowarth/shimmer"
+homepage = "https://github.com/MartinHowarth/shimmer"
+
+keywords = ['game', 'framework', 'graphics']
+
+[tool.poetry.dependencies]
+python = "^3.8"
+toml = "^0.9"
+janus = "^0.4.0"
+cocos2d = "^0.6.7"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+flake8 = "^3.7.9"
+pydocstyle = "^5.0.1"
+mypy = "^0.750"
+pytest = "^5.3.1"
+pytest-subtests = "^0.2.1"

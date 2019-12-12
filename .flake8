@@ -1,0 +1,6 @@
+[flake8]
+; Black will enforce 88 for code; but allow 100 because sometimes comments just need that bit extra to look good!
+max-line-length = 100
+
+; Flake8 doesn't like walrus operators; nor blacks handling of slicing.
+ignore=E203,E231,W503
