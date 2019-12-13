@@ -5,7 +5,7 @@ on: [push]
 jobs:
 
   black:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v1
@@ -20,7 +20,7 @@ jobs:
           poetry install
 
       - run: |
-          .\venv\Scripts\black --check shimmer tests
+          poetry run black --check shimmer tests
 
   flake8:
     runs-on: windows-latest
@@ -39,7 +39,7 @@ jobs:
 
       - run: |
           # The GitHub editor is 127 chars wide
-          .\venv\Scripts\flake8 --count --max-line-length=127 --statistics shimmer tests
+          poetry run flake8 --count --max-line-length=127 --statistics shimmer tests
 
   mypy:
     runs-on: windows-latest
@@ -57,7 +57,7 @@ jobs:
           poetry install
 
       - run: |
-          mypy shimmer tests
+          poetry run mypy shimmer tests
 
   pydocstyle:
     runs-on: windows-latest
@@ -75,7 +75,7 @@ jobs:
           poetry install
 
       - run: |
-          pydocstyle shimmer tests
+          poetry run pydocstyle shimmer tests
 
   pytest:
     runs-on: windows-latest
@@ -93,4 +93,4 @@ jobs:
           poetry install
 
       - run: |
-          pytest tests
+          poetry run pytest tests
