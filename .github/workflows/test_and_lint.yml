@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m venv venv
-        source venv/bin/activate
+        .\venv\Scripts\activate.bat
         pip install poetry
         poetry install
 
