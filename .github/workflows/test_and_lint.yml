@@ -1,0 +1,93 @@
+name: Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache env
+      uses: actions/cache@v1
+      with:
+        path: ./venv
+        key: venv-${{ hashFiles('poetry.lock') }}
+
+    - name: Install dependencies
+      run: |
+        python3 -m venv venv
+        . venv/bin/activate
+        pip install poetry
+        poetry install
+
+  black:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Restore cache
+        uses: actions/cache@v1
+        with:
+          path: ./venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - run: |
+          black --check shimmer tests
+
+  flake8:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Restore cache
+        uses: actions/cache@v1
+        with:
+          path: ./venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - run: |
+          # The GitHub editor is 127 chars wide
+          flake8 --count --max-line-length=127 --statistics shimmer tests
+
+  mypy:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Restore cache
+        uses: actions/cache@v1
+        with:
+          path: ./venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - run: |
+          mypy shimmer tests
+
+  pydocstyle:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Restore cache
+        uses: actions/cache@v1
+        with:
+          path: ./venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - run: |
+          pydocstyle shimmer tests
+
+  pytest:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Restore cache
+        uses: actions/cache@v1
+        with:
+          path: ./venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - run: |
+          pytest tests
