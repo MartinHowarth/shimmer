@@ -38,7 +38,6 @@ jobs:
           poetry install
 
       - run: |
-          # The GitHub editor is 127 chars wide
           poetry run flake8 --count --max-line-length=127 --statistics shimmer tests
 
   mypy:
@@ -93,4 +92,4 @@ jobs:
           poetry install
 
       - run: |
-          poetry run pytest tests
+          poetry run pytest tests --ignore=tests/test_display
