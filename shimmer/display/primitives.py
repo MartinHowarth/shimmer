@@ -1,3 +1,5 @@
+"""Collection of basic graphical constructs."""
+
 import cocos
 import logging
 
@@ -11,11 +13,22 @@ log = logging.getLogger(__name__)
 
 
 def create_rect(width: int, height: int, color: Color) -> cocos.layer.ColorLayer:
+    """Create a colored rectangle."""
     return cocos.layer.ColorLayer(*color.as_tuple_alpha(), width=width, height=height)
 
 
 class UpdatingNode(cocos.cocosnode.CocosNode):
+    """
+    A Node which updates regularly.
+
+    Only performs an update if `self.dirty` is set to True.
+
+    `dirty` can either be set by an third party; or this node will mark itself as dirty
+    if the value returned by `self._current_indicator_value()` changes.
+    """
+
     def __init__(self):
+        """Create a new UpdatingNode."""
         super(UpdatingNode, self).__init__()
         self.schedule(self.update)
         self.dirty = False
@@ -24,6 +37,7 @@ class UpdatingNode(cocos.cocosnode.CocosNode):
         self.__last_indicator_value: Any = object()
 
     def _check_if_dirty(self):
+        """Mark this node as dirty if the indicator value has changed."""
         indicator_value = self._current_indicator_value()
         if self.__last_indicator_value != indicator_value:
             self.__last_indicator_value = indicator_value
@@ -40,10 +54,12 @@ class UpdatingNode(cocos.cocosnode.CocosNode):
 
     @abstractmethod
     def _update(self, dt: float):
+        """Should be overridden to define what this node does in an update."""
         pass
 
     @log_exceptions(log)
     def update(self, dt: float):
+        """Called on every frame to determine if this node needs to update itself."""
         # Only update if the value has changed to save on drawing performance.
         self._check_if_dirty()
         if self.dirty:

@@ -4,3 +4,6 @@ max-line-length = 100
 
 ; Flake8 doesn't like walrus operators; nor blacks handling of slicing.
 ignore=E203,E231,W503
+
+; Flake8 can't handle walrus operators yet, so crashes on these files.
+exclude=shimmer/engine/entity/entity.py

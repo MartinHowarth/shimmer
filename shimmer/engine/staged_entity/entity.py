@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 
 
 class StagedEntity(Entity):
+    definition: StagedEntityDefinition
+
     def __init__(self, definition: StagedEntityDefinition) -> None:
         super(StagedEntity, self).__init__(definition)
         self.current_stage: int = 0
@@ -23,6 +25,11 @@ class StagedEntity(Entity):
             self.complete = True
 
     async def _update(self, dt_s: float):
+        if self.stage_blocker is None:
+            # We shouldn't have `_update` called unless `run` is called, which sets up the
+            # stage blocker, but added this check for safety.
+            return
+
         # Wait for next stage to be unblocked.
         await self.stage_blocker.wait()
 

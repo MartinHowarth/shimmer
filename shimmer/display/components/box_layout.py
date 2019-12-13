@@ -1,13 +1,23 @@
+"""Definition of ways to arrange Boxes."""
+
 import cocos
 
 from abc import abstractmethod
-from typing import List, Union, Optional, cast
+from typing import List, Union, Optional
 
 from .box import Box
 
 
 class BoxLayout(Box):
+    """A collection of Boxes with a well defined layout."""
+
     def __init__(self, boxes: List[Box], spacing: int = 10):
+        """
+        Create a new BoxLayout.
+
+        :param boxes: List of Boxes to include in the layout.
+        :param spacing: Number of pixels to leave between Boxes.
+        """
         super(BoxLayout, self).__init__()
         self._boxes = []  # type: List[Box]
         self._spacing = spacing
@@ -25,6 +35,11 @@ class BoxLayout(Box):
         self.update_layout()
 
     def remove(self, obj: Union[cocos.cocosnode.CocosNode, Box]):
+        """
+        Remove an object from this Layout, and update the position of other Boxes if needed.
+
+        :param obj: CocosNode to remove.
+        """
         super(BoxLayout, self).remove(obj)
         if isinstance(obj, Box):
             self._boxes.remove(obj)
@@ -40,7 +55,7 @@ class BoxLayout(Box):
         """
         Add a child cocosnode. If it's a Box then include it in the layout.
 
-        :param child: See CocosNode
+        :param child: CocosNode to add.
         :param z: See CocosNode
         :param name: See CocosNode
         :param position: Index to insert the box into the list of boxes. Defaults to the end.
@@ -55,6 +70,7 @@ class BoxLayout(Box):
 
     @abstractmethod
     def update_layout(self) -> None:
+        """Update the position of all boxes in this Layout."""
         pass
 
 
@@ -62,6 +78,7 @@ class BoxRow(BoxLayout):
     """Arranges boxes horizontally. Boxes are arranged from left to right."""
 
     def update_layout(self) -> None:
+        """Update the position of all boxes in this Layout."""
         x_total = 0
         for box in self._boxes:
             box.x = x_total
@@ -76,6 +93,7 @@ class BoxColumn(BoxLayout):
     """Arranges boxes vertically. Boxes are arranged from bottom to top."""
 
     def update_layout(self) -> None:
+        """Update the position of all boxes in this Layout."""
         y_total = 0
         for box in self._boxes:
             box.y = y_total

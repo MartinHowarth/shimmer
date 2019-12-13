@@ -1,3 +1,5 @@
+"""Pytest fixtures for programmable GUI components."""
+
 import pytest
 
 from shimmer.engine.programmable.definition import CodeBlock, Instruction
@@ -5,6 +7,8 @@ from shimmer.engine.programmable.definition import CodeBlock, Instruction
 
 @pytest.fixture
 def dummy_code_block() -> CodeBlock:
+    """Code block definition for use in many tests."""
+
     def one():
         pass
 

@@ -1,3 +1,5 @@
+"""Definition of a gauge widget."""
+
 import logging
 
 from shimmer.display.data_structures import Color
@@ -9,7 +11,18 @@ log = logging.getLogger(__name__)
 
 
 class GaugeDisplay(UpdatingNode):
+    """
+    A Gauge widget which displays a vertical bar with an indicator showing the current value.
+
+    Also displays zones of different colors in the gauge to indicate optimal values to the player.
+    """
+
     def __init__(self, definition: GaugeDefinition):
+        """
+        Create a new GaugeDisplay.
+
+        :param definition: Definition of the Gauge to display.
+        """
         super(GaugeDisplay, self).__init__()
         self.definition = definition
         self.height = 100
@@ -31,6 +44,7 @@ class GaugeDisplay(UpdatingNode):
         self._indicator_last_value: float = 0.0
 
     def init_background(self) -> None:
+        """Create the background colors of the gauge."""
         background = create_rect(self.width, self.height, self.bg_color)
         background.position = 0, 0  # Draw at origin of parent layer
         background.draw()
@@ -49,9 +63,11 @@ class GaugeDisplay(UpdatingNode):
         self.add(high)
 
     def _current_indicator_value(self) -> float:
+        """Trigger this gauge to update when the underlying definition value changes."""
         return self.definition.value
 
     def _update(self, dt):
+        """Update the position of the visible indicator."""
         self.indicator.position = (
             0,
             int(self.definition.value_fraction_start * self.height),

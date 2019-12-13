@@ -33,15 +33,14 @@ class ElifBlockDisplay(IfDisplay):
 
 
 class ElseBlockDisplay(IfDisplay):
-    def __init__(self, instruction: Else):
-        super(ElseBlockDisplay, self).__init__(instruction)
-        self.instruction = cast(Else, self.instruction)
+    instruction: Else
 
 
 class ElifDisplay(IfDisplay):
+    instruction: Elif
+
     def __init__(self, instruction: Elif):
         super(ElifDisplay, self).__init__(instruction)
-        self.instruction = cast(Elif, self.instruction)
         self.elif_displays = []  # type: List[ElifBlockDisplay]
         self.else_display = None  # type: Optional[ElseBlockDisplay]
         self.add_else_display()
@@ -73,11 +72,12 @@ class ElifDisplay(IfDisplay):
             self.add(elif_display)
             self.elif_displays.append(elif_display)
 
-        # Update else display to be at the bottom
-        self.else_display.position = (
-            0,
-            -self._if_elif_height(),
-        )
+        if self.else_display is not None:
+            # Update else display to be at the bottom
+            self.else_display.position = (
+                0,
+                -self._if_elif_height(),
+            )
 
     def add_else_display(self):
         else_display = ElseBlockDisplay(self.instruction.else_)
