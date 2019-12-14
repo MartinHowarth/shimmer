@@ -21,7 +21,7 @@ def test_visible_button(run_gui, visible_button_definition):
     layer.rect = cocos.rect.Rect(0, 0, 100, 100)
 
     def change_text_callback(label):
-        def inner():
+        def inner(*_, **__):
             layer.definition.text = label
             layer.update_label()
 

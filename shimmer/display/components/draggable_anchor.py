@@ -8,9 +8,7 @@ from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
 class DraggableAnchor(MouseBox):
     """Box that can be dragged, changing the position of it's parent as well."""
 
-    def __init__(
-        self, rect: cocos.rect.Rect,
-    ):
+    def __init__(self, rect: cocos.rect.Rect):
         """
         Creates a new DraggableAnchor.
 
@@ -43,7 +41,7 @@ class DraggableAnchor(MouseBox):
         """Should only handle drag is this anchor currently is being dragged."""
         return self._currently_dragging
 
-    def handle_drag(self, x, y, dx, dy, buttons, modifiers):
+    def handle_drag(self, *, dx, dy, **__):
         """While the mouse is pressed on the area, keep updating the position."""
         new_parent_pos_x = self.parent.position[0] + dx
         new_parent_pos_y = self.parent.position[1] + dy

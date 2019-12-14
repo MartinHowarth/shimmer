@@ -4,15 +4,29 @@ import cocos
 import logging
 
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, Callable
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
 from shimmer.display.primitives import Point2d
-from shimmer.display.components.box import ActiveBox
+from shimmer.display.components.box import ActiveBox, Box
 
 
 log = logging.getLogger(__name__)
+
+# Type for any callback performed by a MouseBox
+# Specifically the parameters are:
+#    parent: MouseBox  # This is the MouseBox that handled the event.
+#    x: int
+#    y: int
+#    dx: Optional[int] = None
+#    dy: Optional[int] = None
+#    buttons: Optional[int] = None
+#    modifiers: Optional[int] = None
+MouseEventCallable = Callable[
+    ["MouseBox", int, int, Optional[int], Optional[int], Optional[int], Optional[int]],
+    None,
+]
 
 
 @dataclass
@@ -23,11 +37,45 @@ class MouseBoxDefinition:
     Method definitions are optional and are called with the mouse event arguments as keywords.
     """
 
-    on_press: Optional[Callable] = None
-    on_release: Optional[Callable] = None
-    on_hover: Optional[Callable] = None
-    on_unhover: Optional[Callable] = None
-    on_drag: Optional[Callable] = None
+    parent: Optional[Box] = None
+    on_press: Optional[MouseEventCallable] = None
+    on_release: Optional[MouseEventCallable] = None
+    on_hover: Optional[MouseEventCallable] = None
+    on_unhover: Optional[MouseEventCallable] = None
+    on_drag: Optional[MouseEventCallable] = None
+
+
+def bundle_callables(*callables: MouseEventCallable) -> MouseEventCallable:
+    """
+    Bundle many callables into a single function.
+
+    This allows for an event callable defined in MouseBoxDefinition to take multiple actions.
+
+    Callables will be invoked in the order given.
+    """
+
+    def bundle_callables_inner(
+        parent: MouseBox,
+        x: int,
+        y: int,
+        dx: Optional[int] = None,
+        dy: Optional[int] = None,
+        buttons: Optional[int] = None,
+        modifiers: Optional[int] = None,
+    ):
+        """Signature varies depending on which mouse event is called."""
+        for method in callables:
+            method(
+                parent=parent,
+                x=x,
+                y=y,
+                dx=dx,
+                dy=dy,
+                buttons=buttons,
+                modifiers=modifiers,
+            )
+
+    return bundle_callables_inner
 
 
 def bitwise_add(a: int, b: int) -> int:
@@ -60,7 +108,7 @@ class MouseBox(ActiveBox):
         :param rect: Rectangular area that the Box will consider mouses events from.
         """
         super(MouseBox, self).__init__(rect)
-        self.definition: MouseBoxDefinition = definition
+        self.definition: MouseBoxDefinition = replace(definition, parent=self)
 
         # Whether the mouse is currently hovered over the Box or not.
         self._currently_hovered: bool = False
@@ -86,7 +134,9 @@ class MouseBox(ActiveBox):
         if self.definition.on_press is None:
             return
 
-        self.definition.on_press(x=x, y=y, buttons=buttons, modifiers=modifiers)
+        self.definition.on_press(
+            parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
+        )
 
     def _on_release(self, x, y, buttons, modifiers):
         """
@@ -104,7 +154,9 @@ class MouseBox(ActiveBox):
         if self.definition.on_release is None:
             return
 
-        self.definition.on_release(x=x, y=y, buttons=buttons, modifiers=modifiers)
+        self.definition.on_release(
+            parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
+        )
 
     def _on_hover(self, x, y, dx, dy):
         """
@@ -116,7 +168,7 @@ class MouseBox(ActiveBox):
         if self.definition.on_hover is None:
             return
 
-        self.definition.on_hover(x=x, y=y, dx=dx, dy=dy)
+        self.definition.on_hover(parent=self, x=x, y=y, dx=dx, dy=dy)
 
     def _on_unhover(self, x, y, dx, dy):
         """
@@ -131,7 +183,7 @@ class MouseBox(ActiveBox):
         if self.definition.on_unhover is None:
             return
 
-        self.definition.on_unhover(x=x, y=y, dx=dx, dy=dy)
+        self.definition.on_unhover(parent=self, x=x, y=y, dx=dx, dy=dy)
 
     def _on_drag(self, x, y, dx, dy, buttons, modifiers):
         """
@@ -144,7 +196,7 @@ class MouseBox(ActiveBox):
             return
 
         self.definition.on_drag(
-            x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers
+            parent=self, x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers
         )
 
     def _should_handle_mouse_press(self, buttons: int) -> bool:
