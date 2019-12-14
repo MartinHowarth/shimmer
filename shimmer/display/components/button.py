@@ -1,6 +1,7 @@
 """Definition of a Button."""
 
 import cocos
+import logging
 
 
 from dataclasses import dataclass, field
@@ -11,6 +12,8 @@ from shimmer.display.data_structures import Color
 from shimmer.display.primitives import create_rect
 from shimmer.display.components.box import ActiveBox
 
+
+log = logging.getLogger(__name__)
 
 Point2d = Tuple[int, int]
 
@@ -99,6 +102,7 @@ class Button(ActiveBox):
         Calls the `on_press` callback from the definition, passing information about the click to
         to callback.
         """
+        log.debug(f"Button {self!r} pressed.")
         self._currently_pressed = bitwise_add(self._currently_pressed, buttons)
 
         if self.definition.on_press is None:
@@ -121,6 +125,7 @@ class Button(ActiveBox):
         Calls the `on_release` callback from the definition, passing information about the click to
         to callback.
         """
+        log.debug(f"Button {self!r} released.")
         self._currently_pressed = bitwise_remove(self._currently_pressed, buttons)
 
         if self.definition.on_release is None:
@@ -316,13 +321,17 @@ class VisibleButton(Button):
         """Whether this button should handle mouse press events."""
         return (
             self.definition.on_press is not None
+            # Also handle if on_release is defined so we can record which mouse button was used.
+            or self.definition.on_release is not None
             or self.definition.depressed_color is not None
         )
 
     def _should_handle_mouse_release(self, buttons) -> bool:
         """Whether this button should handle mouse release events."""
         return (
-            self.definition.on_release is not None
+            # Also handle if on_press is defined so we can record which mouse button was used.
+            self.definition.on_press is not None
+            or self.definition.on_release is not None
             or self.definition.depressed_color is not None
         ) and bitwise_contains(self._currently_pressed, buttons)
 

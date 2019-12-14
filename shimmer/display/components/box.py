@@ -20,6 +20,7 @@ class Box(cocos.cocosnode.CocosNode):
         """
         super(Box, self).__init__()
         self._rect = rect if rect is not None else cocos.rect.Rect(0, 0, 0, 0)
+        self._update_rect(self._rect)
 
     def contains_coord(self, x: int, y: int) -> bool:
         """Returns whether the point (x,y) is inside the box."""
@@ -32,8 +33,19 @@ class Box(cocos.cocosnode.CocosNode):
 
     @rect.setter
     def rect(self, value: cocos.rect.Rect):
+        """
+        Intercept setting of the rect to re-position this Box onto the given rect.
+
+        :param value: Rect to set this Box to.
+        """
         self._rect = value
-        self.position = self._rect.x, self._rect.y
+        self._update_rect(value)
+
+    def _update_rect(self, rect: cocos.rect.Rect):
+        """Update the position of this Box to the given box."""
+        self.position = rect.x, rect.y
+        self._rect.x = 0
+        self._rect.y = 0
 
 
 class ActiveBox(Box):
