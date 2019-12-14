@@ -1,10 +1,7 @@
 import cocos
 
 from shimmer.display.data_structures import Color
-from shimmer.display.components.button import (
-    VisibleButtonDefinition,
-    VisibleButton,
-)
+from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
 from shimmer.display.components.box_layout import (
     BoxRow,
     BoxColumn,

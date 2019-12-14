@@ -7,8 +7,8 @@ from ..primitives import create_rect
 from ..data_structures import Color
 from ..components.draggable_anchor import DraggableAnchor
 from ..components.box import Box, ActiveBox
-from ..components.button import Button
-from ..components.close_button import CloseButton
+from ..components.mouse_box import MouseBox
+from shimmer.display.widgets.close_button import CloseButton
 
 
 class Window(ActiveBox):
@@ -34,7 +34,6 @@ class Window(ActiveBox):
         self.inner_box: Box = Box(self._inner_box_rect)
         self.title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[cocos.layer.ColorLayer] = None
-        self._background: Optional[cocos.layer.ColorLayer] = None
         self._update_title_bar_background()
         self._update_background()
         self._update_close_button()
@@ -59,7 +58,7 @@ class Window(ActiveBox):
             [
                 self.rect.width - box.x
                 for box in self.title_boxes.values()
-                if isinstance(box, Button)
+                if isinstance(box, MouseBox)
             ]
         )
 
@@ -93,7 +92,7 @@ class Window(ActiveBox):
         self.add(self._title_bar_background, z=-1)
 
     def _update_background(self):
-        """Redefine the background color of the title bar."""
+        """Redefine the background color of the window body."""
         if self._background is not None:
             self.remove(self._background)
 

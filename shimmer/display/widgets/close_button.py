@@ -2,14 +2,14 @@
 
 import cocos
 
-from typing import Optional, Union, Callable
+from typing import Optional, Callable
 
-from ..data_structures import Color
-from .button import VisibleButton, VisibleButtonDefinition, Callback
+from shimmer.display.data_structures import Color
+from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
 
 
 def make_close_button_definition(
-    on_release: Optional[Union[Callback, Callable]]
+    on_release: Optional[Callable],
 ) -> VisibleButtonDefinition:
     """
     Create a close button definition that calls the given callback when clicked.

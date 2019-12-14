@@ -7,7 +7,7 @@ from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
 from shimmer.display.components.box import ActiveBox
 
-
+# TODO refactor to be based on MouseBox
 class DraggableAnchor(ActiveBox):
     """Box that can be dragged, changing the position of it's parent as well."""
 

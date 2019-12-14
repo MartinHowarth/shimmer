@@ -2,10 +2,7 @@ import cocos
 import pytest
 
 from shimmer.display.components.draggable_anchor import DraggableAnchor
-from shimmer.display.components.button import (
-    VisibleButtonDefinition,
-    VisibleButton,
-)
+from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
 from shimmer.display.data_structures import Color
 
 

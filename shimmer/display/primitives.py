@@ -4,7 +4,7 @@ import cocos
 import logging
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Tuple
 
 from shimmer.log_utils import log_exceptions
 from shimmer.display.data_structures import Color
@@ -65,3 +65,6 @@ class UpdatingNode(cocos.cocosnode.CocosNode):
         if self.dirty:
             self.dirty = False
             self._update(dt)
+
+
+Point2d = Tuple[int, int]
