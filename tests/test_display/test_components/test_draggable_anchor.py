@@ -1,26 +1,21 @@
 import cocos
-import pytest
 
+from shimmer.display.components.box import Box
 from shimmer.display.components.draggable_anchor import DraggableAnchor
-from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
 from shimmer.display.data_structures import Color
 
 
-@pytest.fixture
-def visible_button_definition():
-    return VisibleButtonDefinition(
-        text="Click me!",
-        base_color=Color(0, 120, 255),
-        depressed_color=Color(0, 80, 255),
-        hover_color=Color(0, 200, 255),
-    )
+def create_base_box():
+    box = Box(cocos.rect.Rect(0, 0, 100, 100))
+    box.background_color = Color(100, 20, 20)
+    return box
 
 
-def test_draggable_anchor(run_gui, visible_button_definition):
-    """Bottom-left quadrant of the button should be a draggable anchor for the entire Button."""
-    button = VisibleButton(visible_button_definition, cocos.rect.Rect(0, 0, 100, 100))
-    anchor = DraggableAnchor(cocos.rect.Rect(0, 0, 50, 50))
+def test_draggable_anchor(run_gui):
+    """The box should be a draggable."""
+    base_box = create_base_box()
+    anchor = DraggableAnchor(base_box.rect)
 
-    button.add(anchor)
+    base_box.add(anchor)
 
-    assert run_gui(test_draggable_anchor, button)
+    assert run_gui(test_draggable_anchor, base_box)

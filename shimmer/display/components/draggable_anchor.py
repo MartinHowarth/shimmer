@@ -2,47 +2,50 @@
 
 import cocos
 
-from typing import Optional
-from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
+from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
 
-from shimmer.display.components.box import ActiveBox
 
-# TODO refactor to be based on MouseBox
-class DraggableAnchor(ActiveBox):
+class DraggableAnchor(MouseBox):
     """Box that can be dragged, changing the position of it's parent as well."""
 
     def __init__(
-        self, rect: Optional[cocos.rect.Rect] = None,
+        self, rect: cocos.rect.Rect,
     ):
-        """Creates a new DraggableAnchor."""
-        super(DraggableAnchor, self).__init__(rect)
+        """
+        Creates a new DraggableAnchor.
 
-        # Used to record whether we're currently dragging this Box.
-        # This is needed because if the user drags too fast then we can't just rely on
-        # a drag event being inside the box area still.
-        self._currently_dragging: bool = False
+        :param rect: Rectangular area that the Box will consider mouses events from.
+        """
+        defn = MouseBoxDefinition(
+            on_press=self.start_dragging,
+            on_release=self.stop_dragging,
+            on_drag=self.handle_drag,
+        )
+        super(DraggableAnchor, self).__init__(defn, rect)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def _should_handle_mouse_press(self, buttons: int) -> bool:
+        """Should only handle events if this anchor is attached to something."""
+        return self.parent is not None
+
+    def start_dragging(self, *_, **__):
         """If the user clicks within the area, start dragging the anchor and its parent."""
-        if self.parent is None:
-            return EVENT_UNHANDLED
+        self._currently_dragging = True
 
-        coord = cocos.director.director.get_virtual_coordinates(x, y)
-        if self.contains_coord(*coord):
-            self._currently_dragging = True
-            return EVENT_HANDLED
+    def _should_handle_mouse_release(self, buttons: int) -> bool:
+        """Should only handle events if this anchor is attached to something."""
+        return self.parent is not None
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def stop_dragging(self, *_, **__):
+        """On mouse release, stop dragging this Box."""
+        self._currently_dragging = False
+
+    def _should_handle_mouse_drag(self) -> bool:
+        """Should only handle drag is this anchor currently is being dragged."""
+        return self._currently_dragging
+
+    def handle_drag(self, x, y, dx, dy, buttons, modifiers):
         """While the mouse is pressed on the area, keep updating the position."""
-        if not self._currently_dragging:
-            return EVENT_UNHANDLED
-
         new_parent_pos_x = self.parent.position[0] + dx
         new_parent_pos_y = self.parent.position[1] + dy
 
         self.parent.position = new_parent_pos_x, new_parent_pos_y
-        return EVENT_HANDLED
-
-    def on_mouse_release(self, x, y, buttons, modifiers):
-        """On mouse release, stop dragging this Box."""
-        self._currently_dragging = False
