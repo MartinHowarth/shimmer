@@ -17,7 +17,8 @@ from shimmer.display.components.pop_up import (
 from shimmer.display.components.box_track_cursor import BoxTrackCursor
 
 
-def create_mouse_box(definition: MouseBoxDefinition):
+def create_mouse_box(definition: MouseBoxDefinition) -> MouseBox:
+    """Create a MouseBox with a background color and the given defintion."""
     box = MouseBox(definition, cocos.rect.Rect(0, 0, 100, 100))
     box.background_color = Color(100, 20, 20)
     return box

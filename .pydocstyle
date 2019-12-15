@@ -1,0 +1,5 @@
+[pydocstyle]
+ignore=D203,D212,D401
+
+# Override default match to include test code.
+match=.*.py

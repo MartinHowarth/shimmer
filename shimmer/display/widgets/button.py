@@ -1,3 +1,9 @@
+"""
+A visible, clickable button.
+
+Changes color when interacted with (clicked. on hover) and calls the defined methods.
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -13,7 +19,7 @@ from shimmer.display.primitives import create_rect
 
 
 @dataclass
-class VisibleButtonDefinition(MouseBoxDefinition):
+class ButtonDefinition(MouseBoxDefinition):
     """A Button definition with visual elements."""
 
     text: Optional[str] = None
@@ -22,22 +28,20 @@ class VisibleButtonDefinition(MouseBoxDefinition):
     hover_color: Optional[Color] = None
 
 
-class VisibleButton(MouseBox):
+class Button(MouseBox):
     """
     A Button that has visual elements.
 
     Changes color when hovered over or clicked on.
     """
 
-    definition: VisibleButtonDefinition
+    definition: ButtonDefinition
 
     def __init__(
-        self,
-        definition: VisibleButtonDefinition,
-        rect: Optional[cocos.rect.Rect] = None,
+        self, definition: ButtonDefinition, rect: Optional[cocos.rect.Rect] = None,
     ):
-        """Creates a new VisibleButton."""
-        super(VisibleButton, self).__init__(definition, rect)
+        """Create a new VisibleButton."""
+        super(Button, self).__init__(definition, rect)
         self.label: Optional[cocos.text.Label] = None
         self.color_rect: cocos.layer.ColorLayer = None
         self.update_label()
@@ -113,14 +117,14 @@ class VisibleButton(MouseBox):
 
     def _on_press(self, x, y, buttons, modifiers):
         """Change the button color and call the on_press callback."""
-        super(VisibleButton, self)._on_press(x, y, buttons, modifiers)
+        super(Button, self)._on_press(x, y, buttons, modifiers)
         if self.definition.depressed_color is not None:
             self.color_rect.color = self.definition.depressed_color.as_tuple()
             # self.color_rect.opacity = self.definition.depressed_color.a
 
     def _on_release(self, x, y, buttons, modifiers):
         """Change the button color and call the on_release callback."""
-        super(VisibleButton, self)._on_release(x, y, buttons, modifiers)
+        super(Button, self)._on_release(x, y, buttons, modifiers)
         if self._currently_hovered:
             if self.definition.hover_color is not None:
                 self.color_rect.color = self.definition.hover_color.as_tuple()
@@ -131,14 +135,14 @@ class VisibleButton(MouseBox):
 
     def _on_hover(self, x, y, dx, dy):
         """Change the button color and call the on_hover callback."""
-        super(VisibleButton, self)._on_hover(x, y, dx, dy)
+        super(Button, self)._on_hover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.hover_color.as_tuple()
             # self.color_rect.opacity = self.definition.hover_color.a
 
     def _on_unhover(self, x, y, dx, dy):
         """Change the button color and call the on_unhover callback."""
-        super(VisibleButton, self)._on_unhover(x, y, dx, dy)
+        super(Button, self)._on_unhover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.base_color.as_tuple()
             # self.color_rect.opacity = self.definition.base_color.a

@@ -1,3 +1,5 @@
+"""Definition of a Box that tracks the cursor."""
+
 from typing import Optional
 
 import cocos

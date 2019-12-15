@@ -33,6 +33,7 @@ class Box(cocos.cocosnode.CocosNode):
 
     @property
     def rect(self) -> cocos.rect.Rect:
+        """Return the rect that this box encompasses."""
         return self._rect
 
     @rect.setter

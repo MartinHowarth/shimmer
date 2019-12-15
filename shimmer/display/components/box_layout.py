@@ -27,10 +27,12 @@ class BoxLayout(Box):
 
     @property
     def spacing(self) -> int:
+        """Return the spacing between items in the layout."""
         return self._spacing
 
     @spacing.setter
     def spacing(self, value: int):
+        """Set the spacing between items in the layout, and update the layout."""
         self._spacing = value
         self.update_layout()
 

@@ -41,7 +41,7 @@ class DraggableAnchor(MouseBox):
         """Should only handle drag is this anchor currently is being dragged."""
         return self._currently_dragging
 
-    def handle_drag(self, *, dx, dy, **__):
+    def handle_drag(self, *_, dx=0, dy=0, **__):
         """While the mouse is pressed on the area, keep updating the position."""
         new_parent_pos_x = self.parent.position[0] + dx
         new_parent_pos_y = self.parent.position[1] + dy

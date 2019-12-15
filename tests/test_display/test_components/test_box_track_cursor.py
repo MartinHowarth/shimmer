@@ -1,3 +1,5 @@
+"""Test a Box that tracks the cursor."""
+
 import cocos
 
 from shimmer.display.data_structures import Color

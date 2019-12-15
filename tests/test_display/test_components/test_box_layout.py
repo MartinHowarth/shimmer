@@ -1,7 +1,9 @@
+"""Test the various box layout methods."""
+
 import cocos
 
 from shimmer.display.data_structures import Color
-from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
+from shimmer.display.widgets.button import ButtonDefinition, Button
 from shimmer.display.components.box_layout import (
     BoxRow,
     BoxColumn,
@@ -9,8 +11,9 @@ from shimmer.display.components.box_layout import (
 )
 
 
-def make_visible_button_definition(text: str):
-    return VisibleButtonDefinition(
+def make_visible_button_definition(text: str) -> ButtonDefinition:
+    """Create a ButtonDefinition with the given text."""
+    return ButtonDefinition(
         text=text,
         base_color=Color(0, 120, 255),
         depressed_color=Color(0, 80, 255),
@@ -22,7 +25,7 @@ def test_box_row(run_gui):
     """Horizontal row of buttons should be shown."""
     buttons = []
     for ind in range(4):
-        btn = VisibleButton(make_visible_button_definition(str(ind)))
+        btn = Button(make_visible_button_definition(str(ind)))
         btn.rect = cocos.rect.Rect(0, 0, 40, 100)
         buttons.append(btn)
 
@@ -37,7 +40,7 @@ def test_box_column(run_gui):
     """Vertical column of buttons should be shown."""
     buttons = []
     for ind in range(4):
-        btn = VisibleButton(make_visible_button_definition(str(ind)))
+        btn = Button(make_visible_button_definition(str(ind)))
         btn.rect = cocos.rect.Rect(0, 0, 100, 40)
         buttons.append(btn)
 
@@ -53,7 +56,7 @@ def test_build_rectangular_grid_horizontal(run_gui):
     n_buttons = 10
     buttons = []
     for ind in range(n_buttons):
-        btn = VisibleButton(make_visible_button_definition(str(ind)))
+        btn = Button(make_visible_button_definition(str(ind)))
         btn.rect = cocos.rect.Rect(0, 0, 100, 40)
         buttons.append(btn)
 

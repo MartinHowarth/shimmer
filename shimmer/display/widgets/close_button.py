@@ -5,19 +5,17 @@ import cocos
 from typing import Optional, Callable
 
 from shimmer.display.data_structures import Color
-from shimmer.display.widgets.button import VisibleButtonDefinition, VisibleButton
+from shimmer.display.widgets.button import ButtonDefinition, Button
 
 
-def make_close_button_definition(
-    on_release: Optional[Callable],
-) -> VisibleButtonDefinition:
+def make_close_button_definition(on_release: Optional[Callable],) -> ButtonDefinition:
     """
     Create a close button definition that calls the given callback when clicked.
 
     :param on_release: Action to take when clicked.
     :return: Definition of the button.
     """
-    return VisibleButtonDefinition(
+    return ButtonDefinition(
         text="X",
         base_color=Color(200, 0, 127),
         hover_color=Color(255, 0, 127),
@@ -25,7 +23,7 @@ def make_close_button_definition(
     )
 
 
-class CloseButton(VisibleButton):
+class CloseButton(Button):
     """Standard close button that removes its parent CocosNode when clicked."""
 
     def __init__(

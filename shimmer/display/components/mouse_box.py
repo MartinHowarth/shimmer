@@ -5,7 +5,7 @@ import logging
 
 
 from dataclasses import dataclass, replace
-from typing import Optional, Callable
+from typing import Optional, Protocol
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
 from shimmer.display.primitives import Point2d
@@ -14,19 +14,28 @@ from shimmer.display.components.box import ActiveBox, Box
 
 log = logging.getLogger(__name__)
 
-# Type for any callback performed by a MouseBox
-# Specifically the parameters are:
-#    parent: MouseBox  # This is the MouseBox that handled the event.
-#    x: int
-#    y: int
-#    dx: Optional[int] = None
-#    dy: Optional[int] = None
-#    buttons: Optional[int] = None
-#    modifiers: Optional[int] = None
-MouseEventCallable = Callable[
-    ["MouseBox", int, int, Optional[int], Optional[int], Optional[int], Optional[int]],
-    None,
-]
+
+class MouseEventCallable(Protocol):
+    """Protocol defining the type for any callback performed by a MouseBox."""
+
+    def __call__(
+        self,
+        parent: "MouseBox",  # This is the MouseBox that handled the event.
+        x: int,
+        y: int,
+        dx: Optional[int] = None,
+        dy: Optional[int] = None,
+        buttons: Optional[int] = None,
+        modifiers: Optional[int] = None,
+    ) -> None:
+        """
+        The signature of mouse event callbacks.
+
+        The following parameters depend on the event that has occurred - see pyglet documentation:
+            (dx, dy) are always given together; but not always given.
+            (buttons, modifiers) are always given together; but not always given.
+        """
+        pass
 
 
 @dataclass
@@ -290,9 +299,7 @@ class MouseBox(ActiveBox):
             # Do not return EVENT_HANDLED on unhover as we have left the button area.
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        """
-        Cocos director callback when the mouse is moved while a mouse button is pressed.
-        """
+        """Cocos director callback when the mouse is moved while a mouse button is pressed."""
         if not self._should_handle_mouse_drag():
             return EVENT_UNHANDLED
 

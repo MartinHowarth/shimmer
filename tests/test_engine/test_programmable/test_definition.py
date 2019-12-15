@@ -171,7 +171,7 @@ def test_nested_elif(subtests, dummy_code_block, another_dummy_code_block):
 
 
 def test_program(dummy_code_block):
-    program = Program(dummy_code_block)
+    program = Program("test_program", dummy_code_block)
     program.run()
     assert_code_block_called(dummy_code_block)
 

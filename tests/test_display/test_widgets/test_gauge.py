@@ -1,3 +1,5 @@
+"""Tests for the gauge widget."""
+
 import pytest
 
 from shimmer.engine.widgets.base import FloatRange
@@ -7,8 +9,9 @@ from shimmer.display.widgets.gauge import GaugeDisplay
 
 @pytest.fixture
 def dummy_gauge_definition():
+    """Common definition of a gauge for use in the tests."""
     return GaugeDefinition(
-        "test", FloatRange(0, 100), FloatRange(20, 80), FloatRange(50, 75), 40,
+        FloatRange(0, 100), FloatRange(20, 80), FloatRange(50, 75), 40,
     )
 
 

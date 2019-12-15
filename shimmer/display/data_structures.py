@@ -35,7 +35,7 @@ class Font:
     bold: bool = False
     italic: bool = False
     color: Color = White
-    dpi: int = None  # Resolution of the font. Defaults to 96.
+    dpi: Optional[int] = None  # Resolution of the font. Defaults to 96.
 
     def to_pyglet_label_kwargs(self) -> Dict[str, Any]:
         """Convert this definition into cocos/pyglet compatible kwargs."""
@@ -87,17 +87,21 @@ class LabelDefinition:
 
     # Alignment of the text
     align: HorizontalAlignment = HorizontalAlignment.left
-    multiline: bool = False
+
+    # If not given, multiline will be automatically determine by whether a `width` is set or not.
+    multiline: Optional[bool] = None
 
     # Transformation anchor points.
     anchor_x: HorizontalAlignment = HorizontalAlignment.left
     anchor_y: VerticalAlignment = VerticalAlignment.bottom
 
     def __post_init__(self):
-        if self.width is None:
-            self.multiline = False
-        else:
-            self.multiline = True
+        """Determine whether this label should be multiline or not if user hasn't specified."""
+        if self.multiline is None:
+            if self.width is None:
+                self.multiline = False
+            else:
+                self.multiline = True
 
     def to_pyglet_label_kwargs(self) -> Dict[str, Any]:
         """Convert this definition into cocos/pyglet compatible kwargs."""

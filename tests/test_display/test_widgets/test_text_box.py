@@ -13,6 +13,7 @@ from shimmer.display.data_structures import (
 
 @pytest.fixture
 def dummy_text_box_definition():
+    """Common definition of a TextBox for use in the tests."""
     return TextBoxDefinition(
         label=LabelDefinition(text="This is a sample sentence. " * 10, font=Calibri)
     )

@@ -6,7 +6,7 @@ from shimmer.engine.widgets.gauge import GaugeDefinition, FloatRange
 @pytest.fixture
 def dummy_gauge_definition():
     return GaugeDefinition(
-        "test", FloatRange(0, 100), FloatRange(20, 80), FloatRange(50, 75), 40,
+        FloatRange(0, 100), FloatRange(20, 80), FloatRange(50, 75), 40,
     )
 
 

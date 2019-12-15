@@ -1,3 +1,5 @@
+"""Test the draggable anchor Box."""
+
 import cocos
 
 from shimmer.display.components.box import Box
@@ -5,7 +7,8 @@ from shimmer.display.components.draggable_anchor import DraggableAnchor
 from shimmer.display.data_structures import Color
 
 
-def create_base_box():
+def create_base_box() -> Box:
+    """Create a Box that has a background color."""
     box = Box(cocos.rect.Rect(0, 0, 100, 100))
     box.background_color = Color(100, 20, 20)
     return box
