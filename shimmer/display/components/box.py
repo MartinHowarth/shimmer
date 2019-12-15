@@ -14,9 +14,6 @@ from ..primitives import create_rect
 class Box(cocos.cocosnode.CocosNode):
     """A CocosNode that has a defined rectangular area."""
 
-    # If defined, the box will be filled with this color.
-    _background_color: Optional[Color] = None
-
     def __init__(self, rect: Optional[cocos.rect.Rect] = None):
         """
         Creates a new Box.
@@ -26,8 +23,8 @@ class Box(cocos.cocosnode.CocosNode):
         super(Box, self).__init__()
         self._rect = rect if rect is not None else cocos.rect.Rect(0, 0, 0, 0)
         self._update_rect(self._rect)
+        self._background_color: Optional[Color] = None
         self._background: Optional[cocos.layer.ColorLayer] = None
-        self._update_background()
 
     def contains_coord(self, x: int, y: int) -> bool:
         """Returns whether the point (x,y) is inside the box."""
@@ -56,20 +53,25 @@ class Box(cocos.cocosnode.CocosNode):
 
     @property
     def background_color(self) -> Optional[Color]:
+        """Get the background color of this Box."""
         return self._background_color
 
     @background_color.setter
     def background_color(self, value: Optional[Color]):
+        """Set the background color of this Box."""
         self._background_color = value
         self._update_background()
 
     def _update_background(self):
-        """Redefine the background color of the pop up."""
-        if self._background_color is None:
-            return
-
+        """Set the background color of this Box."""
+        # Remove the old background
         if self._background is not None:
             self.remove(self._background)
+
+        # Don't create a new background if the color is None
+        # (this allows removal of the background color)
+        if self._background_color is None:
+            return
 
         self._background = create_rect(
             self.rect.width, self.rect.height, self._background_color,
