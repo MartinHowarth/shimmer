@@ -25,8 +25,10 @@ def test_box_row(run_gui):
     """Horizontal row of buttons should be shown."""
     buttons = []
     for ind in range(4):
-        btn = Button(make_visible_button_definition(str(ind)))
-        btn.rect = cocos.rect.Rect(0, 0, 40, 100)
+        btn = Button(
+            make_visible_button_definition(str(ind)),
+            rect=cocos.rect.Rect(0, 0, 40, 100),
+        )
         buttons.append(btn)
 
     box_row = BoxRow(buttons, spacing=10)
@@ -40,8 +42,10 @@ def test_box_column(run_gui):
     """Vertical column of buttons should be shown."""
     buttons = []
     for ind in range(4):
-        btn = Button(make_visible_button_definition(str(ind)))
-        btn.rect = cocos.rect.Rect(0, 0, 100, 40)
+        btn = Button(
+            make_visible_button_definition(str(ind)),
+            rect=cocos.rect.Rect(0, 0, 100, 40),
+        )
         buttons.append(btn)
 
     box_column = BoxColumn(buttons)
@@ -56,8 +60,10 @@ def test_build_rectangular_grid_horizontal(run_gui):
     n_buttons = 10
     buttons = []
     for ind in range(n_buttons):
-        btn = Button(make_visible_button_definition(str(ind)))
-        btn.rect = cocos.rect.Rect(0, 0, 100, 40)
+        btn = Button(
+            make_visible_button_definition(str(ind)),
+            rect=cocos.rect.Rect(0, 0, 100, 40),
+        )
         buttons.append(btn)
 
     box_grid = build_rectangular_grid(buttons, width=4)

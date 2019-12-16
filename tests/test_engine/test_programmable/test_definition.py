@@ -9,6 +9,7 @@ from shimmer.engine.programmable.definition import (
     CodeBlock,
     If,
     Elif,
+    IfElifElse,
     Program,
     NOT_YET_RUN,
     Else,
@@ -22,16 +23,24 @@ def make_dummy_code_block() -> CodeBlock:
 
 def make_dummy_if(call_if: bool = True):
     """Create a simple If block."""
-    if_block = make_dummy_code_block()
-    return If(method=return_true if call_if else return_false, if_block=if_block,)
+    code_block = make_dummy_code_block()
+    return If(method=return_true if call_if else return_false, code_block=code_block,)
 
 
-def make_dummy_elif(call_if: bool = True):
+def make_dummy_elif_block(call_if: bool = True):
+    """Create a simple If block."""
+    code_block = make_dummy_code_block()
+    return Elif(method=return_true if call_if else return_false, code_block=code_block,)
+
+
+def make_dummy_if_else(call_if: bool = True):
     """Create a simple Elif block."""
-    if_block = make_dummy_code_block()
-    else_ = Else(if_block=make_dummy_code_block())
-    return Elif(
-        method=return_true if call_if else return_false, if_block=if_block, else_=else_,
+    code_block = make_dummy_code_block()
+    else_ = Else(code_block=make_dummy_code_block())
+    return IfElifElse(
+        method=return_true if call_if else return_false,
+        code_block=code_block,
+        else_=else_,
     )
 
 
@@ -110,22 +119,22 @@ def test_codeblock_all_instructions_called(dummy_code_block):
 def test_if(subtests, dummy_code_block):
     """Test that the correct code block is run for If blocks."""
     with subtests.test("Test if test was True, code block was called"):
-        if_ = If(method=return_true, if_block=dummy_code_block)
+        if_ = If(method=return_true, code_block=dummy_code_block)
         if_.execute()
         assert_code_block_called(dummy_code_block)
 
     with subtests.test("Test if test was False, code block was not called"):
-        if_ = If(method=return_false, if_block=dummy_code_block)
+        if_ = If(method=return_false, code_block=dummy_code_block)
         if_.execute()
         assert_code_block_called(dummy_code_block)
 
 
-def test_elif_if_block_called(subtests, dummy_code_block, another_dummy_code_block):
+def test_elif_code_block_called(subtests, dummy_code_block, another_dummy_code_block):
     """Test that the If part of an Elif block can be called correctly."""
-    elif_ = Elif(
+    elif_ = IfElifElse(
         method=return_true,
-        if_block=dummy_code_block,
-        else_=Else(if_block=another_dummy_code_block),
+        code_block=dummy_code_block,
+        else_=Else(code_block=another_dummy_code_block),
     )
     elif_.execute()
     assert_code_block_called(dummy_code_block)
@@ -134,10 +143,10 @@ def test_elif_if_block_called(subtests, dummy_code_block, another_dummy_code_blo
 
 def test_elif_else_block_called(subtests, dummy_code_block, another_dummy_code_block):
     """Test that the Else block of an Elif can be called correctly."""
-    elif_ = Elif(
+    elif_ = IfElifElse(
         method=return_false,
-        if_block=dummy_code_block,
-        else_=Else(if_block=another_dummy_code_block),
+        code_block=dummy_code_block,
+        else_=Else(code_block=another_dummy_code_block),
     )
     elif_.execute()
     assert_code_block_not_called(dummy_code_block)
@@ -155,20 +164,20 @@ def test_elif_else_block_called(subtests, dummy_code_block, another_dummy_code_b
 )
 def test_elif(block_call_if, expected_called_block_index):
     """Test that the correct block of an If/Elif/Else block is called."""
-    if_block = make_dummy_code_block()
+    code_block = make_dummy_code_block()
     else_block = make_dummy_code_block()
 
     first_call_if = return_true if block_call_if[0] else return_false
     elifs = [make_dummy_if(call_if) for call_if in block_call_if[1:]]
-    elif_ = Elif(
+    elif_ = IfElifElse(
         method=first_call_if,
-        if_block=if_block,
+        code_block=code_block,
         elifs=elifs,
-        else_=Else(if_block=else_block),
+        else_=Else(code_block=else_block),
     )
     elif_.execute()
 
-    all_blocks = [if_block, *(_elif.if_block for _elif in elifs), else_block]
+    all_blocks = [code_block, *(_elif.code_block for _elif in elifs), else_block]
 
     for index, block in enumerate(all_blocks):
         if index == expected_called_block_index:
@@ -180,11 +189,11 @@ def test_elif(block_call_if, expected_called_block_index):
 def test_nested_elif(subtests, dummy_code_block, another_dummy_code_block):
     """Test that nested Elif blocks are called correctly."""
     else_ = Else(
-        if_block=CodeBlock(
-            instructions=[If(method=return_true, if_block=another_dummy_code_block,)]
+        code_block=CodeBlock(
+            instructions=[If(method=return_true, code_block=another_dummy_code_block,)]
         )
     )
-    elif_ = Elif(method=return_false, if_block=dummy_code_block, else_=else_,)
+    elif_ = IfElifElse(method=return_false, code_block=dummy_code_block, else_=else_,)
     elif_.execute()
     assert_code_block_not_called(dummy_code_block)
     assert_code_block_called(another_dummy_code_block)
@@ -221,7 +230,7 @@ def test_code_block_str(dummy_code_block):
 
 def test_if_str(dummy_code_block):
     """Test that the string representation of an If block is correct."""
-    if_ = If(method=return_false, if_block=dummy_code_block)
+    if_ = If(method=return_false, code_block=dummy_code_block)
     assert (
         str(if_)
         == dedent(
@@ -237,7 +246,7 @@ def test_if_str(dummy_code_block):
 
 def test_if_else_str(dummy_code_block):
     """Test that the string representation of an If/Else block is correct."""
-    else_if = make_dummy_elif(call_if=False)
+    else_if = make_dummy_if_else(call_if=False)
     assert (
         str(else_if)
         == dedent(
@@ -257,11 +266,11 @@ def test_if_else_str(dummy_code_block):
 
 def test_elif_str(dummy_code_block):
     """Test that the string representation of an Elif block is correct."""
-    elif_ = Elif(
+    elif_ = IfElifElse(
         method=return_false,
-        if_block=dummy_code_block,
-        elifs=[make_dummy_if(True), make_dummy_if(False)],
-        else_=Else(if_block=dummy_code_block),
+        code_block=dummy_code_block,
+        elifs=[make_dummy_elif_block(True), make_dummy_elif_block(False)],
+        else_=Else(code_block=dummy_code_block),
     )
     assert (
         str(elif_)
@@ -291,11 +300,11 @@ def test_elif_str(dummy_code_block):
 def test_nested_if_str(dummy_code_block, another_dummy_code_block):
     """Test that the string representation of nested If blocks is correct."""
     else_ = Else(
-        if_block=CodeBlock(
-            instructions=[If(method=return_true, if_block=another_dummy_code_block,)]
+        code_block=CodeBlock(
+            instructions=[If(method=return_true, code_block=another_dummy_code_block,)]
         )
     )
-    elif_ = Elif(method=return_false, if_block=dummy_code_block, else_=else_,)
+    elif_ = IfElifElse(method=return_false, code_block=dummy_code_block, else_=else_,)
     assert (
         str(elif_)
         == dedent(

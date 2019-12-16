@@ -2,48 +2,59 @@
 
 import logging
 
-from shimmer.display.data_structures import Color
-from shimmer.display.primitives import UpdatingNode, create_rect
-from shimmer.display.programmable.instruction import InstructionDisplay
+from dataclasses import dataclass, field
+from typing import List, cast
+
+from shimmer.display.components.box_layout import BoxColumn
+from shimmer.display.programmable.instruction import (
+    InstructionDisplay,
+    InstructionDisplayDefinition,
+)
 from shimmer.engine.programmable.definition import CodeBlock
 
 log = logging.getLogger(__name__)
 
 
-class CodeBlockDisplay(UpdatingNode):
+@dataclass(frozen=True)
+class CodeBlockDisplayDefinition:
+    """Definition of how to display a CodeBlock."""
+
+    instruction_definition: InstructionDisplayDefinition = field(
+        default_factory=InstructionDisplayDefinition
+    )
+    # Spacing between the vertically arranged instructions.
+    spacing: int = 0
+
+
+class CodeBlockDisplay(BoxColumn):
     """Graphical display of a set of programmable code instructions."""
 
-    def __init__(self, code_block: CodeBlock):
+    def __init__(
+        self, code_block: CodeBlock, code_block_definition: CodeBlockDisplayDefinition,
+    ):
         """
         Create a new CodeBlockDisplay.
 
         :param code_block: The code block to display.
         """
-        super(CodeBlockDisplay, self).__init__()
-        self.code_block = code_block
-        self.refresh_children()
+        super(CodeBlockDisplay, self).__init__([], code_block_definition.spacing)
+        self.code_block: CodeBlock = code_block
+        self.definition: CodeBlockDisplayDefinition = code_block_definition
 
-    @property
-    def height(self):
-        """Total pixel height of this code block display."""
-        return sum(
-            [child[1].height for child in self.children if hasattr(child[1], "height")]
-        )
+        self._boxes = cast(List[InstructionDisplay], self._boxes)
+        self.update_instructions()
 
-    def refresh_children(self):
-        """Recreate the entire display of this code block."""
-        self.children.clear()
+    def update_instructions(self):
+        """Re-create all instruction displays."""
+        # We could enhance this later to only re-create those that have
+        # changed, but keep it simple for starters.
+        for instruction_display in self._boxes:
+            self.remove(instruction_display)
 
-        if len(self.code_block.instructions) == 0:
-            null_rect = create_rect(100, 15, Color(150, 0, 0))
-            null_rect.position = 0, -null_rect.height
-            self.add(null_rect)
-
-        for index, instruction in enumerate(self.code_block.instructions):
-            ins_display = InstructionDisplay(instruction)
-            ins_display.position = 0, -(index + 1) * ins_display.height
-            self.add(ins_display)
-
-    def _update(self, dt: float):
-        """Called when this Node is dirty to update the display."""
-        self.refresh_children()
+        for instruction in self.code_block.instructions:
+            new_display = InstructionDisplay(
+                instruction, self.definition.instruction_definition, None
+            )
+            # Insert at start of list so we get a top-to-bottom list, which matches how the code
+            # will be executed.
+            self.add(new_display, position=0)

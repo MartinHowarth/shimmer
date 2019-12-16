@@ -38,7 +38,7 @@ class MouseEventCallable(Protocol):
         pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class MouseBoxDefinition:
     """
     Definition of an invisible Box that can be clicked and hovered over.

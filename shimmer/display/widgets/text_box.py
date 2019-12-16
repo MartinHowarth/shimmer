@@ -12,7 +12,7 @@ from ..data_structures import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class TextBoxDefinition:
     """Definition of a text box."""
 

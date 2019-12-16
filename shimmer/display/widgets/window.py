@@ -12,7 +12,7 @@ from ..components.mouse_box import MouseBox
 from shimmer.display.widgets.close_button import CloseButton
 
 
-@dataclass
+@dataclass(frozen=True)
 class WindowDefinition:
     """Definition of the visual style of a Window."""
 

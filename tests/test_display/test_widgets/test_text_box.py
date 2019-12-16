@@ -40,9 +40,7 @@ def test_text_box_right_align(run_gui, dummy_text_box_definition):
 
 
 def test_text_box_no_multline(run_gui, dummy_text_box_definition):
-    """
-    A text box should be shown with no wrapped text (i.e. on a single line).
-    """
+    """A text box should be shown with no wrapped text (i.e. on a single line)."""
     defn = TextBoxDefinition(
         label=LabelDefinition(
             text="This is a sample sentence. " * 10, font=ComicSans, width=None

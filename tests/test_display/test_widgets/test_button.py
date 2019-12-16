@@ -3,6 +3,8 @@
 import cocos
 import pytest
 
+from dataclasses import replace
+
 from shimmer.display.data_structures import Color
 from shimmer.display.widgets.button import ButtonDefinition, Button
 
@@ -20,30 +22,52 @@ def button_definition():
 
 def test_button(run_gui, button_definition):
     """Button that changes color and label when interacted with."""
-    layer = Button(button_definition)
-    layer.rect = cocos.rect.Rect(0, 0, 100, 100)
 
     def change_text_callback(label):
-        def inner(*_, **__):
-            layer.definition.text = label
-            layer.update_label()
+        def inner(parent: Button, *_, **__):
+            parent.definition = replace(parent.definition, text=label)
+            parent.update_label()
 
         return inner
 
-    layer.definition.on_press = change_text_callback("on_press")
-    layer.definition.on_release = change_text_callback("on_release")
-    layer.definition.on_hover = change_text_callback("on_hover")
-    layer.definition.on_unhover = change_text_callback("on_unhover")
+    defn = replace(
+        button_definition,
+        on_press=change_text_callback("on_press"),
+        on_release=change_text_callback("on_release"),
+        on_hover=change_text_callback("on_hover"),
+        on_unhover=change_text_callback("on_unhover"),
+    )
+    layer = Button(defn, cocos.rect.Rect(0, 0, 100, 100))
 
     assert run_gui(test_button, layer)
 
 
 def test_overlapping_buttons(run_gui, button_definition):
     """Overlapping buttons should be independently interactable."""
-    button1 = Button(button_definition)
-    button1.rect = cocos.rect.Rect(0, 0, 100, 100)
-    button2 = Button(button_definition)
-    button2.rect = cocos.rect.Rect(0, 0, 100, 100)
+    button1 = Button(button_definition, cocos.rect.Rect(0, 0, 100, 100))
+    button2 = Button(button_definition, cocos.rect.Rect(0, 0, 100, 100))
     button2.position = 50, 50
 
     assert run_gui(test_overlapping_buttons, button1, button2)
+
+
+def test_button_dynamic_size(run_gui, button_definition):
+    """Button whose size always exactly fits the text on it."""
+
+    def change_text_callback(label):
+        def inner(parent: Button, *_, **__):
+            parent.definition = replace(parent.definition, text=label)
+            parent.update_label()
+
+        return inner
+
+    defn = replace(
+        button_definition,
+        on_press=change_text_callback("on_press"),
+        on_release=change_text_callback("on_release"),
+        on_hover=change_text_callback("on_hover"),
+        on_unhover=change_text_callback("on_unhover"),
+    )
+    layer = Button(defn, rect=None)
+
+    assert run_gui(test_button_dynamic_size, layer)

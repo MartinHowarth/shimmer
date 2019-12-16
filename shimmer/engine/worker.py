@@ -1,3 +1,5 @@
+"""An Entity that does work on another entity."""
+
 import asyncio
 import logging
 
@@ -9,12 +11,20 @@ log = logging.getLogger(__name__)
 
 
 class Worker(Entity):
+    """An Entity that does work on another entity."""
+
     def __init__(self, target: StagedEntity) -> None:
+        """
+        Create a Worker.
+
+        :param target: The target entity to work on.
+        """
         super(Worker, self).__init__(EntityDefinition(name="worker"))
         self.target = target
         self.rest_period = 0
 
     async def _update(self, dt_s: float):
+        """Action to perform on every update tick."""
         if self.target.stage_blocker and not self.target.stage_blocker.is_set():
             log.debug(f"Starting work on {self.target.definition.name}")
             await asyncio.sleep(self.target.stage_advancement_time_s)

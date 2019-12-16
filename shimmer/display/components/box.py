@@ -19,8 +19,12 @@ class Box(cocos.cocosnode.CocosNode):
         Creates a new Box.
 
         :param rect: Definition of the rectangle that this Box encompasses.
+            If None, this Box may be dynamic in size - see subclasses for how this behaves.
         """
         super(Box, self).__init__()
+        # If rect is None, set this Box as dynamic in size.
+        self._dynamic_size = rect is None
+        # And init the rect to a minimal size to guarantee existence.
         self._rect = rect if rect is not None else cocos.rect.Rect(0, 0, 0, 0)
         self._update_rect(self._rect)
         self._background_color: Optional[Color] = None
@@ -43,14 +47,14 @@ class Box(cocos.cocosnode.CocosNode):
 
         :param value: Rect to set this Box to.
         """
-        self._rect = value
         self._update_rect(value)
 
     def _update_rect(self, rect: cocos.rect.Rect):
         """Update the position of this Box to the given box."""
         self.position = rect.x, rect.y
-        self._rect.x = 0
-        self._rect.y = 0
+        rect.x = 0
+        rect.y = 0
+        self._rect = rect
 
     @property
     def background_color(self) -> Optional[Color]:

@@ -1,90 +1,152 @@
+"""Visual display of a code block If/Else/Elif statement."""
+
+import cocos
 import logging
 
+from dataclasses import dataclass, field
 from typing import cast, Optional, List
 
-from shimmer.display.programmable.instruction import InstructionDisplay
-from shimmer.display.programmable.code_block import CodeBlockDisplay
+from shimmer.display.components.box import Box
+from shimmer.display.components.box_layout import BoxColumn
+from shimmer.display.programmable.instruction import (
+    InstructionDisplay,
+    InstructionDisplayDefinition,
+)
+from shimmer.display.programmable.code_block import (
+    CodeBlockDisplay,
+    CodeBlockDisplayDefinition,
+)
 from shimmer.engine.programmable.definition import (
-    Elif,
-    If,
-    Else,
+    InstructionWithCodeBlock,
+    IfElifElse,
 )
 
 log = logging.getLogger(__name__)
 
 
-class IfDisplay(InstructionDisplay):
-    indentation = 20
+@dataclass(frozen=True)
+class InstructionWithBlockDisplayDefinition:
+    """Definition of how to display an instruction with an associated CodeBlock."""
 
-    def __init__(self, instruction: If):
-        super(IfDisplay, self).__init__(instruction)
-        self.instruction = cast(If, self.instruction)
-        self.if_block_display = CodeBlockDisplay(self.instruction.if_block)
-        self.if_block_display.position = self.indentation, 0
-        self.add(self.if_block_display)
-
-    @property
-    def total_height(self):
-        return self.if_block_display.height + self.height
-
-
-class ElifBlockDisplay(IfDisplay):
-    text_format = "el{}"
+    # Definition of the main If statement display
+    instruction_definition: InstructionDisplayDefinition = field(
+        default_factory=InstructionDisplayDefinition
+    )
+    # Definition of the code block display within the If statement.
+    code_block_definition: CodeBlockDisplayDefinition = field(
+        default_factory=CodeBlockDisplayDefinition
+    )
+    # How far the code block is indented by compared to the If instruction.
+    code_block_indentation: int = 20
 
 
-class ElseBlockDisplay(IfDisplay):
-    instruction: Else
+class InstructionWithBlockDisplay(Box):
+    """
+    Graphical display of an instruction with a nested code block.
+
+    Consists of:
+      - an InstructionDisplay
+      - a CodeBlockDisplay below that, indented by a configurable amount.
+    """
+
+    def __init__(
+        self,
+        instruction: InstructionWithCodeBlock,
+        definition: InstructionWithBlockDisplayDefinition,
+    ):
+        """
+        Create an IfElifElseDisplay.
+
+        :param instruction: The InstructionWithCodeBlock instruction to display.
+        :param definition: The definition of the display style to use for the code block.
+        """
+        super(InstructionWithBlockDisplay, self).__init__()
+        self.instruction: InstructionWithCodeBlock = instruction
+        self.definition: InstructionWithBlockDisplayDefinition = definition
+        self.instruction_display: Optional[InstructionDisplay] = None
+        self.code_block_display: Optional[CodeBlockDisplay] = None
+        self.update_boxes()
+
+    def update_boxes(self):
+        """Recreate the child boxes of this display."""
+        if self.instruction_display is not None:
+            self.remove(self.instruction_display)
+        if self.code_block_display is not None:
+            self.remove(self.code_block_display)
+        self.code_block_display = CodeBlockDisplay(
+            self.instruction.code_block, self.definition.code_block_definition
+        )
+        self.code_block_display.position = self.definition.code_block_indentation, 0
+        self.instruction_display = InstructionDisplay(
+            self.instruction, self.definition.instruction_definition
+        )
+        self.instruction_display.position = 0, self.code_block_display.rect.height
+        self.rect = cocos.rect.Rect(
+            0,
+            0,
+            max(
+                self.code_block_display.rect.width
+                + self.definition.code_block_indentation,
+                self.instruction_display.rect.width,
+            ),
+            self.code_block_display.rect.height + self.instruction_display.rect.height,
+        )
+        self.add(self.instruction_display)
+        self.add(self.code_block_display)
 
 
-class ElifDisplay(IfDisplay):
-    instruction: Elif
+class IfElifElseDisplay(BoxColumn):
+    """
+    A vertical arrangement of InstructionWithBlockDisplays to display an If/Elif/Else block.
 
-    def __init__(self, instruction: Elif):
-        super(ElifDisplay, self).__init__(instruction)
-        self.elif_displays = []  # type: List[ElifBlockDisplay]
-        self.else_display = None  # type: Optional[ElseBlockDisplay]
-        self.add_else_display()
-        self.refresh_elifs()
+    Produces output similar to:
+    if method():
+        if_method1()
+    elif method2():
+        elif_method()
+    else:
+        pass
+    """
 
-    def _if_elif_height(self):
-        total = super(ElifDisplay, self).total_height
-        total += sum([elif_display.total_height for elif_display in self.elif_displays])
-        return total
+    def __init__(
+        self,
+        instruction: IfElifElse,
+        definition: InstructionWithBlockDisplayDefinition,
+    ):
+        """
+        Create an IfElifElseDisplay.
 
-    @property
-    def total_height(self):
-        total = self._if_elif_height()
-        if self.else_display is not None:
-            total += self.else_display.total_height
-        return total
+        :param instruction: The IfElifElse instruction to display.
+        :param definition: The definition of the display style to use for each code block.
+        """
+        super(IfElifElseDisplay, self).__init__([], 0)
+        self.instruction: IfElifElse = instruction
+        self.definition: InstructionWithBlockDisplayDefinition = definition
 
-    def refresh_elifs(self):
-        for z, child in self.children:
-            if isinstance(child, ElifBlockDisplay):
-                self.remove(child)
-        self.elif_displays = []
-        self.add_elif_displays()
+        self._boxes = cast(List[InstructionWithBlockDisplay], self._boxes)
 
-    def add_elif_displays(self):
+        self.update_boxes()
+
+    def update_boxes(self):
+        """Recreate the child boxes of this display."""
+        for display in self._boxes:
+            self.remove(display)
+
         for _elif in self.instruction.elifs:
-            elif_display = ElifBlockDisplay(_elif)
-            elif_display.position = 0, -self._if_elif_height()
-            self.add(elif_display)
-            self.elif_displays.append(elif_display)
+            elif_display = InstructionWithBlockDisplay(_elif, self.definition)
+            # Insert at start of list so we get a top-to-bottom list, which matches how the code
+            # will be executed.
+            self.add(elif_display, position=0)
 
-        if self.else_display is not None:
-            # Update else display to be at the bottom
-            self.else_display.position = (
-                0,
-                -self._if_elif_height(),
+        if self.instruction.else_ is not None:
+            else_display = InstructionWithBlockDisplay(
+                self.instruction.else_, self.definition
             )
+            # Insert at start of list so we get Else at the bottom.
+            self.add(else_display, position=0)
 
-    def add_else_display(self):
-        else_display = ElseBlockDisplay(self.instruction.else_)
-        else_display.position = 0, -self.total_height
-        self.add(else_display)
-        self.else_display = else_display
-
-    def _update(self, dt: float):
-        super(ElifDisplay, self)._update(dt)
-        self.refresh_elifs()
+        # Add instruction last so it appears at the top.
+        instruction_display = InstructionWithBlockDisplay(
+            self.instruction, self.definition
+        )
+        self.add(instruction_display)

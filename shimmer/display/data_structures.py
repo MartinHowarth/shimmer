@@ -24,6 +24,8 @@ class Color:
 
 
 White = Color(255, 255, 255)
+ActiveGreen = Color(0, 200, 255)
+PassiveBlue = Color(0, 120, 255)
 
 
 @dataclass

@@ -81,6 +81,10 @@ class BoxRow(BoxLayout):
 
     def update_layout(self) -> None:
         """Update the position of all boxes in this Layout."""
+        # Don't update layout if there are no boxes to layout.
+        if not self._boxes:
+            return
+
         x_total = 0
         for box in self._boxes:
             box.x = x_total
@@ -96,6 +100,10 @@ class BoxColumn(BoxLayout):
 
     def update_layout(self) -> None:
         """Update the position of all boxes in this Layout."""
+        # Don't update layout if there are no boxes to layout.
+        if not self._boxes:
+            return
+
         y_total = 0
         for box in self._boxes:
             box.y = y_total

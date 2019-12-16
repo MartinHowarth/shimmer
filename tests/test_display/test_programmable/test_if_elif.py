@@ -1,94 +1,65 @@
+"""Tests for the graphical display of If/Elif/Else code blocks."""
+
 import cocos
-import pytest
+import time
 
 from concurrent.futures import ThreadPoolExecutor
-from time import sleep
+from dataclasses import replace
 
-from shimmer.engine.programmable.definition import If, Elif, Else
+from shimmer.engine.programmable.definition import If, IfElifElse
 from shimmer.display.programmable.if_elif import (
-    IfDisplay,
-    ElifDisplay,
-    CodeBlockDisplay,
+    InstructionWithBlockDisplay,
+    IfElifElseDisplay,
+    InstructionWithBlockDisplayDefinition,
 )
 
-
-def return_true():
-    return True
-
-
-@pytest.fixture
-def dummy_elif(dummy_code_block):
-    if_ = If(method=return_true, if_block=dummy_code_block)
-    if2_ = If(method=return_true, if_block=dummy_code_block)
-    else_ = Else(if_block=dummy_code_block)
-    instruction = Elif(
-        method=return_true, if_block=dummy_code_block, elifs=[if_, if2_], else_=else_
-    )
-    return instruction
+from .conftest import return_false, return_true
 
 
 def test_if_display(run_gui, dummy_code_block):
     """If Instruction should be shown with a code block."""
-    instruction = If(method=return_true, if_block=dummy_code_block)
-    layer = IfDisplay(instruction)
+    instruction = If(method=return_true, code_block=dummy_code_block)
+    layer = InstructionWithBlockDisplay(
+        instruction, InstructionWithBlockDisplayDefinition()
+    )
     assert run_gui(test_if_display, layer)
 
 
 def test_if_display_empty_code_block(run_gui):
     """If Instruction should be shown with empty code block."""
     instruction = If(method=return_true)
-    layer = IfDisplay(instruction)
+    layer = InstructionWithBlockDisplay(
+        instruction, InstructionWithBlockDisplayDefinition()
+    )
     assert run_gui(test_if_display_empty_code_block, layer)
 
 
-def test_if_display_active(run_gui, dummy_code_block):
-    """Active If instruction should be shown with one active method in code block."""
-    instruction = If(
-        method=return_true, if_block=dummy_code_block, currently_running=True
-    )
-    dummy_code_block.instructions[1].currently_running = True
-    layer = IfDisplay(instruction)
-    assert run_gui(test_if_display_active, layer)
-
-
-def test_if_else_display(run_gui, dummy_code_block):
-    """If / elif / else block should be shown."""
-    if_ = If(method=return_true, if_block=dummy_code_block)
-    if2_ = If(method=return_true, if_block=dummy_code_block)
-    else_ = Else(if_block=dummy_code_block)
-    instruction = Elif(
-        method=return_true, if_block=dummy_code_block, elifs=[if_, if2_], else_=else_
-    )
-    layer = ElifDisplay(instruction)
+def test_if_else_display(run_gui, dummy_elif):
+    """If / else block should be shown with no elifs."""
+    if_else_defn = replace(dummy_elif, elifs=[])
+    layer = IfElifElseDisplay(if_else_defn, InstructionWithBlockDisplayDefinition())
     assert run_gui(test_if_else_display, layer)
 
 
-def test_elif_display_with_changing_elements(run_gui, dummy_elif):
-    """If/elif/else block with changing elements should be shown."""
+def test_if_elif_else_display(run_gui, dummy_elif):
+    """If / elif / else block should be shown."""
+    layer = IfElifElseDisplay(dummy_elif, InstructionWithBlockDisplayDefinition())
+    assert run_gui(test_if_elif_else_display, layer)
 
-    def rotate_instructions(code_block_display: CodeBlockDisplay):
+
+def test_if_elif_else_display_on_loop(run_gui, dummy_elif):
+    """Code block with the first Elif block instruction being run sequentially should be shown."""
+    # Make it so that the first Elif statement gets run
+    dummy_elif.method = return_false
+
+    def loop_code_block(instruction: IfElifElse):
+        """Run the instruction repeatedly with a sleep in between."""
         while not cocos.director.director.terminate_app:
-            sleep(0.5)
-            code_block_display.code_block.instructions = (
-                code_block_display.code_block.instructions[1:]
-                + code_block_display.code_block.instructions[:1]
-            )
-            code_block_display.dirty = True
+            instruction.execute()
+            time.sleep(0.5)
 
-    def add_delete_elif_block(elif_block_display: ElifDisplay):
-        elif_block = elif_block_display.instruction.elifs[0]
-        while not cocos.director.director.terminate_app:
-            sleep(1)
-            if elif_block in elif_block_display.instruction.elifs:
-                elif_block_display.instruction.elifs.remove(elif_block)
-            else:
-                elif_block_display.instruction.elifs.insert(0, elif_block)
-            elif_block_display.dirty = True
-
-    layer = ElifDisplay(dummy_elif)
-
+    layer = IfElifElseDisplay(dummy_elif, InstructionWithBlockDisplayDefinition())
     with ThreadPoolExecutor() as executor:
-        # Have to run the instruction rotation in a thread because `run_gui` blocks.
-        executor.submit(rotate_instructions, layer.if_block_display)
-        executor.submit(add_delete_elif_block, layer)
-        assert run_gui(test_elif_display_with_changing_elements, layer)
+        # Start the loop in a thread because `run_gui` blocks.
+        executor.submit(loop_code_block, dummy_elif)
+        assert run_gui(test_if_elif_else_display_on_loop, layer)

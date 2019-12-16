@@ -20,13 +20,17 @@ class Instruction:
     method: Callable
     args: Tuple = field(default_factory=tuple)
     result: Optional[Any] = NOT_YET_RUN
-    currently_running: bool = False
+
+    on_execute_start: Optional[Callable] = None
+    on_execute_complete: Optional[Callable] = None
 
     def execute(self):
         """Run the instruction."""
-        self.currently_running = True
+        if self.on_execute_start is not None:
+            self.on_execute_start()
         self.result = self.method(*self.args)
-        self.currently_running = False
+        if self.on_execute_complete is not None:
+            self.on_execute_complete()
 
     def method_str(self) -> str:
         """Return the string representation of the instruction."""
@@ -56,7 +60,18 @@ class CodeBlock:
 
 
 @dataclass
-class If(Instruction):
+class InstructionWithCodeBlock(Instruction):
+    """
+    Definition of an instruction with a code block.
+
+    Generally won't be used directly, but is a common base class for If/While instructions.
+    """
+
+    code_block: CodeBlock = field(default_factory=CodeBlock)
+
+
+@dataclass
+class If(InstructionWithCodeBlock):
     """
     Definition of an If block.
 
@@ -65,15 +80,15 @@ class If(Instruction):
       - A code block to execute if that instruction returns True.
     """
 
-    if_block: CodeBlock = field(default_factory=CodeBlock)
-
     def execute(self):
         """Run the If statement. Only run the code_block if the statement returns True."""
         super(If, self).execute()
         if self.result:
-            self.currently_running = True
-            self.if_block.run()
-            self.currently_running = False
+            if self.on_execute_start is not None:
+                self.on_execute_start()
+            self.code_block.run()
+            if self.on_execute_complete is not None:
+                self.on_execute_complete()
 
     def method_str(self) -> str:
         """Return the string representation of the If statement without the code block."""
@@ -82,7 +97,7 @@ class If(Instruction):
     def __str__(self) -> str:
         """Return the string representation of the If statement and code block."""
         instruction_str = super(If, self).__str__()
-        code_block_str = indent(str(self.if_block), "    ")
+        code_block_str = indent(str(self.code_block), "    ")
         return f"{instruction_str}\n{code_block_str}"
 
 
@@ -90,6 +105,7 @@ class If(Instruction):
 class Else(If):
     """An Else block. Only for use with an Elif block."""
 
+    # We're treating an Else block like an If block that always return True.
     method: Callable = return_true
 
     def method_str(self) -> str:
@@ -100,20 +116,34 @@ class Else(If):
 @dataclass
 class Elif(If):
     """
+    An Elif code block.
+
+    Not intended to be used directly, should be used as part of an IfElifElse.
+    """
+
+    def method_str(self) -> str:
+        """Return the string representation of the Elif statement without the code block."""
+        if_str = super(Elif, self).method_str()
+        return "el{}".format(if_str)
+
+
+@dataclass
+class IfElifElse(If):
+    """
     An If/Elif/Else block.
 
     Optionally has 0 or many Elif blocks.
     Optionally has 0 or 1 Else block.
     """
 
-    elifs: List[If] = field(default_factory=list)
+    elifs: List[Elif] = field(default_factory=list)
 
     # Default to a blank Else block which performs no action.
     else_: Else = field(default_factory=Else)
 
     def execute(self):
         """Run the Elif block."""
-        super(Elif, self).execute()
+        super(IfElifElse, self).execute()
         if not self.result:  # Result of super If statement
             for if_ in self.elifs:
                 if_.execute()
@@ -124,9 +154,9 @@ class Elif(If):
 
     def __str__(self) -> str:
         """Return the string representation of the Elif block."""
-        result = super(Elif, self).__str__() + "\n"
+        result = super(IfElifElse, self).__str__() + "\n"
         for _elif in self.elifs:
-            result += f"el{str(_elif)}\n"
+            result += str(_elif) + "\n"
         result += str(self.else_)
         return result
 

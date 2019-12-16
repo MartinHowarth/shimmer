@@ -14,16 +14,16 @@ from shimmer.display.components.mouse_box import (
     MouseBox,
     bitwise_contains,
 )
-from shimmer.display.data_structures import Color
+from shimmer.display.data_structures import Color, PassiveBlue
 from shimmer.display.primitives import create_rect
 
 
-@dataclass
+@dataclass(frozen=True)
 class ButtonDefinition(MouseBoxDefinition):
     """A Button definition with visual elements."""
 
     text: Optional[str] = None
-    base_color: Color = Color(0, 111, 255)
+    base_color: Color = PassiveBlue
     depressed_color: Optional[Color] = None
     hover_color: Optional[Color] = None
 
@@ -40,7 +40,12 @@ class Button(MouseBox):
     def __init__(
         self, definition: ButtonDefinition, rect: Optional[cocos.rect.Rect] = None,
     ):
-        """Create a new VisibleButton."""
+        """
+        Create a new Button.
+
+        :param definition: Definition of the button.
+        :param rect: Size of the button. If None, the Button will dynamically fit the defined text.
+        """
         super(Button, self).__init__(definition, rect)
         self.label: Optional[cocos.text.Label] = None
         self.color_rect: cocos.layer.ColorLayer = None
@@ -49,22 +54,27 @@ class Button(MouseBox):
 
     @property
     def rect(self) -> cocos.rect.Rect:
+        """Get the rect defining the shape of this button."""
         return self._rect
 
     @rect.setter
     def rect(self, value: cocos.rect.Rect):
+        """Set the rect defining the shape of this button and redraw the button."""
         self._rect = value
+
+        # Update label before the color layer so that we can update rect size dynamically first
+        # if needed.
         self.update_label()
         self.update_color_layer()
 
     def update_label(self):
         """Recreate the button label."""
+        if self.label is not None:
+            self.remove(self.label)
+
         if self.definition.text is None:
             self.label = None
             return
-
-        if self.label is not None:
-            self.remove(self.label)
 
         self.label = cocos.text.Label(
             self.definition.text,
@@ -74,6 +84,16 @@ class Button(MouseBox):
             anchor_x="center",
             anchor_y="center",
         )
+        if self._dynamic_size:
+            self._update_rect(
+                cocos.rect.Rect(
+                    0,
+                    0,
+                    self.label.element.content_width,
+                    self.label.element.content_height,
+                )
+            )
+            self.update_color_layer()
         self.label.position = self.rect.width / 2, self.rect.height / 2
         self.add(self.label)
 
