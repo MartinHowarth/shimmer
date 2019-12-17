@@ -27,11 +27,6 @@ class AsyncManager:
         self.__loop = loop
         self.__to_be_started = janus.Queue(loop=loop)
 
-    def raise_if_not_ready(self):
-        """Raise an exception if this manager has not been initialised fully yet."""
-        if self.__loop is None or self.__to_be_started is None:
-            raise RuntimeError("AsyncManager has no event loop set!")
-
     async def run(self):
         """
         Start running all entities managed by this manager.
@@ -39,7 +34,8 @@ class AsyncManager:
         Blocks until `self.running` is set to False. This method is intended to be started in a
         thread.
         """
-        self.raise_if_not_ready()
+        if self.__loop is None or self.__to_be_started is None:
+            raise RuntimeError("AsyncManager has no event loop set!")
 
         self.running = True
         while self.running:
