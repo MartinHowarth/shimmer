@@ -14,7 +14,7 @@ from shimmer.display.components.mouse_box import (
     MouseBox,
     bitwise_contains,
 )
-from shimmer.display.data_structures import Color, PassiveBlue
+from shimmer.display.data_structures import Color, PassiveBlue, ActiveBlue, MutedBlue
 from shimmer.display.primitives import create_rect
 
 
@@ -24,8 +24,12 @@ class ButtonDefinition(MouseBoxDefinition):
 
     text: Optional[str] = None
     base_color: Color = PassiveBlue
-    depressed_color: Optional[Color] = None
-    hover_color: Optional[Color] = None
+    depressed_color: Optional[Color] = MutedBlue
+    hover_color: Optional[Color] = ActiveBlue
+
+    # If width or height are None then that dimension will automatically match the text size.
+    width: Optional[int] = None
+    height: Optional[int] = None
 
 
 class Button(MouseBox):
@@ -37,20 +41,16 @@ class Button(MouseBox):
 
     definition: ButtonDefinition
 
-    def __init__(
-        self, definition: ButtonDefinition, rect: Optional[cocos.rect.Rect] = None,
-    ):
+    def __init__(self, definition: ButtonDefinition):
         """
         Create a new Button.
 
         :param definition: Definition of the button.
-        :param rect: Size of the button. If None, the Button will dynamically fit the defined text.
         """
-        super(Button, self).__init__(definition, rect)
+        super(Button, self).__init__(definition)
         self.label: Optional[cocos.text.Label] = None
         self.color_rect: cocos.layer.ColorLayer = None
         self.update_label()
-        self.update_color_layer()
 
     @property
     def rect(self) -> cocos.rect.Rect:
@@ -58,17 +58,14 @@ class Button(MouseBox):
         return self._rect
 
     @rect.setter
-    def rect(self, value: cocos.rect.Rect):
+    def rect(self, value: cocos.rect.Rect) -> None:
         """Set the rect defining the shape of this button and redraw the button."""
-        self._rect = value
-
-        # Update label before the color layer so that we can update rect size dynamically first
-        # if needed.
-        self.update_label()
+        self._update_rect(value)
         self.update_color_layer()
+        self.update_label()
 
     def update_label(self):
-        """Recreate the button label."""
+        """Recreate the button label and update color layer as needed."""
         if self.label is not None:
             self.remove(self.label)
 
@@ -84,16 +81,12 @@ class Button(MouseBox):
             anchor_x="center",
             anchor_y="center",
         )
-        if self._dynamic_size:
-            self._update_rect(
-                cocos.rect.Rect(
-                    0,
-                    0,
-                    self.label.element.content_width,
-                    self.label.element.content_height,
-                )
-            )
-            self.update_color_layer()
+        # Set size dynamically if either defined width or height are None.
+        new_width = self.definition.width or self.label.element.content_width
+        new_height = self.definition.height or self.label.element.content_height
+        self.set_size(new_width, new_height)
+        self.update_color_layer()
+
         self.label.position = self.rect.width / 2, self.rect.height / 2
         self.add(self.label)
 
@@ -109,7 +102,7 @@ class Button(MouseBox):
         )
         self.add(self.color_rect, z=-1)
 
-    def _should_handle_mouse_press(self, buttons) -> bool:
+    def _should_handle_mouse_press(self, buttons: int) -> bool:
         """Whether this button should handle mouse press events."""
         return (
             self.definition.on_press is not None
@@ -118,7 +111,7 @@ class Button(MouseBox):
             or self.definition.depressed_color is not None
         )
 
-    def _should_handle_mouse_release(self, buttons) -> bool:
+    def _should_handle_mouse_release(self, buttons: int) -> bool:
         """Whether this button should handle mouse release events."""
         return (
             # Also handle if on_press is defined so we can record which mouse button was used.
@@ -135,14 +128,14 @@ class Button(MouseBox):
             or self.definition.hover_color is not None
         )
 
-    def _on_press(self, x, y, buttons, modifiers):
+    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Change the button color and call the on_press callback."""
         super(Button, self)._on_press(x, y, buttons, modifiers)
         if self.definition.depressed_color is not None:
             self.color_rect.color = self.definition.depressed_color.as_tuple()
             # self.color_rect.opacity = self.definition.depressed_color.a
 
-    def _on_release(self, x, y, buttons, modifiers):
+    def _on_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """Change the button color and call the on_release callback."""
         super(Button, self)._on_release(x, y, buttons, modifiers)
         if self._currently_hovered:
@@ -153,16 +146,77 @@ class Button(MouseBox):
             self.color_rect.color = self.definition.base_color.as_tuple()
             # self.color_rect.opacity = self.definition.base_color.a
 
-    def _on_hover(self, x, y, dx, dy):
+    def _on_hover(self, x: int, y: int, dx: int, dy: int) -> None:
         """Change the button color and call the on_hover callback."""
         super(Button, self)._on_hover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.hover_color.as_tuple()
             # self.color_rect.opacity = self.definition.hover_color.a
 
-    def _on_unhover(self, x, y, dx, dy):
+    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> None:
         """Change the button color and call the on_unhover callback."""
         super(Button, self)._on_unhover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.base_color.as_tuple()
             # self.color_rect.opacity = self.definition.base_color.a
+
+
+class ToggleButton(Button):
+    """A button that toggles on and off."""
+
+    def __init__(self, definition: ButtonDefinition):
+        """
+        Create a new ToggleButton.
+
+        :param definition: Definition of the button.
+        """
+        super(ToggleButton, self).__init__(definition)
+        self._is_toggled: bool = False
+
+    @property
+    def is_toggled(self) -> bool:
+        """Whether this button is currently toggled on."""
+        return self._is_toggled
+
+    @is_toggled.setter
+    def is_toggled(self, value: bool) -> None:
+        """
+        Set the toggled state of this button.
+
+        Calls the on_press / on_release as appropriate.
+        """
+        if self._is_toggled != value:
+            # If requested state is different to current state, then toggle this button.
+            self._on_press(0, 0, 0, 0)
+        # Otherwise no action needed to toggle the button.
+
+    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+        """
+        Called when the Box is clicked by the user.
+
+        Alternatively calls the `on_press` and `on_release` callback from the definition on each
+        press.
+        """
+        self._is_toggled = not self._is_toggled
+        if not self._is_toggled:
+            super(ToggleButton, self)._on_release(x, y, buttons, modifiers)
+        else:
+            super(ToggleButton, self)._on_press(x, y, buttons, modifiers)
+
+    def _should_handle_mouse_release(self, buttons: int) -> bool:
+        """
+        Toggle buttons do no react to mouse release events.
+
+        Super of `on_release` is called when button is pressed while already toggled.
+        """
+        return False
+
+    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> None:
+        """Change the button color and call the on_unhover callback."""
+        super(Button, self)._on_unhover(x, y, dx, dy)
+        if self.definition.hover_color is not None:
+            # Reset the color back to what is should be based on the toggled state.
+            if not self._is_toggled:
+                self.color_rect.color = self.definition.base_color.as_tuple()
+            elif self.definition.depressed_color is not None:
+                self.color_rect.color = self.definition.depressed_color.as_tuple()

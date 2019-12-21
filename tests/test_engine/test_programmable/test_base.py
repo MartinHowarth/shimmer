@@ -26,7 +26,7 @@ def dummy_programmable():
     return Programmable(methods={return_true, return_false, return_str})
 
 
-def test_bool_methods(dummy_programmable: Programmable):
+def test_bool_methods(dummy_programmable: Programmable) -> None:
     """Test that Boolean methods are detected correctly."""
     bool_methods = list(dummy_programmable.bool_methods)
     assert len(bool_methods) == 2

@@ -52,7 +52,7 @@ def test_if_elif_else_display_on_loop(run_gui, dummy_elif):
     # Make it so that the first Elif statement gets run
     dummy_elif.method = return_false
 
-    def loop_code_block(instruction: IfElifElse):
+    def loop_code_block(instruction: IfElifElse) -> None:
         """Run the instruction repeatedly with a sleep in between."""
         while not cocos.director.director.terminate_app:
             instruction.execute()

@@ -1,6 +1,5 @@
 """Visual display of a code block If/Else/Elif statement."""
 
-import cocos
 import logging
 
 from dataclasses import dataclass, field
@@ -81,9 +80,7 @@ class InstructionWithBlockDisplay(Box):
             self.instruction, self.definition.instruction_definition
         )
         self.instruction_display.position = 0, self.code_block_display.rect.height
-        self.rect = cocos.rect.Rect(
-            0,
-            0,
+        self.set_size(
             max(
                 self.code_block_display.rect.width
                 + self.definition.code_block_indentation,

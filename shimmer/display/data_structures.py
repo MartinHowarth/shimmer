@@ -26,6 +26,8 @@ class Color:
 White = Color(255, 255, 255)
 ActiveGreen = Color(0, 200, 255)
 PassiveBlue = Color(0, 120, 255)
+ActiveBlue = Color(0, 200, 255)
+MutedBlue = Color(0, 80, 255)
 
 
 @dataclass
@@ -63,51 +65,65 @@ class VerticalAlignment(Enum):
     """Enum of possible values for vertical alignment in pyglet."""
 
     bottom = "bottom"
-    baseline = "baseline"
     center = "center"
     top = "top"
 
 
-@dataclass
+class VerticalTextAlignment(Enum):
+    """Enum of possible values for vertical alignment of text in pyglet."""
+
+    bottom = "bottom"
+    center = "center"
+    top = "top"
+    # Baseline is the bottom of the first line of text, as opposed to `bottom` which is
+    # the bottom of the pyglet text layout.
+    baseline = "baseline"
+
+
+@dataclass(frozen=True)
 class LabelDefinition:
     """
-    Definition of a text label. All parameters match cocos/pyglet Label paremeters.
+    Definition of a text label. All parameters match pyglet Label parameters.
 
     Create a cocos Label from this definition using:
         `cocos.text.Label(**label_definition.to_pyglet_label_kwargs())`
+
+    Note that thse values are for the pyglet text layout, rather than the cocos Label.
+    The pyglet text layout is a property of the Label called `element.
     """
 
     text: str
-    font: Font
+    font: Font = Calibri
 
     # Maximum width of the text box. Text is wrapped to fit within this width.
     # Set to None to force single line text of arbitrary width.
     width: Optional[int] = 300
 
-    # Maximum height of the text box. If None, height is set as needed based on length of text.
+    # Maximum height of the text box. If None, height is set as needed based on length of text and
+    # whether it is multiline or not.
     height: Optional[int] = None
 
     # Alignment of the text
     align: HorizontalAlignment = HorizontalAlignment.left
 
-    # If not given, multiline will be automatically determine by whether a `width` is set or not.
+    # Used to override default multiline behaviour which is based on whether `width` is set or not.
+    # Use `is_multiline()` to determine whether to use multiline or not.
     multiline: Optional[bool] = None
 
     # Transformation anchor points.
     anchor_x: HorizontalAlignment = HorizontalAlignment.left
-    anchor_y: VerticalAlignment = VerticalAlignment.bottom
+    anchor_y: VerticalTextAlignment = VerticalTextAlignment.bottom
 
-    def __post_init__(self):
+    def is_multiline(self) -> bool:
         """Determine whether this label should be multiline or not if user hasn't specified."""
         if self.multiline is None:
-            if self.width is None:
-                self.multiline = False
-            else:
-                self.multiline = True
+            return self.width is not None
+        return self.multiline
 
     def to_pyglet_label_kwargs(self) -> Dict[str, Any]:
         """Convert this definition into cocos/pyglet compatible kwargs."""
         _dict = asdict(self, dict_factory=shimmer_dict_factory)
+        _dict["multiline"] = self.is_multiline()
 
         # Convert Font correctly, and then flatten the result into a non-nested dict.
         _dict.update(self.font.to_pyglet_label_kwargs())

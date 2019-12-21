@@ -24,7 +24,7 @@ class BoxTrackCursor(ActiveBox):
             offset = 0, 0
         self.offset = offset
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         """
         Cocos director callback when the mouse is moved.
 

@@ -7,7 +7,7 @@ from shimmer.display.data_structures import (
 
 
 def test_label_definition_to_pyglet_label_kwargs():
-    """No GUI. Test that a LabelDefinition is correctly converted into pyglet compatible kwargs."""
+    """Test that a LabelDefinition is correctly converted into pyglet compatible kwargs."""
     defn = LabelDefinition(text="Test", font=Calibri)
     assert defn.to_pyglet_label_kwargs() == {
         "align": "left",
@@ -27,10 +27,10 @@ def test_label_definition_to_pyglet_label_kwargs():
 
 
 def test_label_definition_auto_multiline(subtests):
-    """No GUI. Test that the multiline attribute gets set correctly on dataclass init."""
+    """Test that the multiline attribute gets set correctly on dataclass init."""
     with subtests.test("With `width` specified, multiline should be True."):
         defn = LabelDefinition(text="Test", font=Calibri, width=300)
-        assert defn.multiline is True
+        assert defn.is_multiline() is True
     with subtests.test("With no `width` specified, multiline should be False."):
         defn = LabelDefinition(text="Test", font=Calibri, width=None)
-        assert defn.multiline is False
+        assert defn.is_multiline() is False

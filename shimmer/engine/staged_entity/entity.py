@@ -34,7 +34,7 @@ class StagedEntity(Entity):
         if self.current_stage == self.definition.num_stages:
             self.complete = True
 
-    async def _update(self, dt_s: float):
+    async def _update(self, dt_s: float) -> None:
         """Handles waiting for stage unblocking and waiting for stage completion time."""
         if self.stage_blocker is None:
             # We shouldn't have `_update` called unless `run` is called, which sets up the

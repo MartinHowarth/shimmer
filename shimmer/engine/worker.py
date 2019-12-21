@@ -23,7 +23,7 @@ class Worker(Entity):
         self.target = target
         self.rest_period = 0
 
-    async def _update(self, dt_s: float):
+    async def _update(self, dt_s: float) -> None:
         """Action to perform on every update tick."""
         if self.target.stage_blocker and not self.target.stage_blocker.is_set():
             log.debug(f"Starting work on {self.target.definition.name}")

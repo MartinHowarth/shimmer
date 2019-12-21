@@ -3,9 +3,10 @@
 import logging
 
 from functools import update_wrapper
+from typing import Callable
 
 
-def log_exceptions(logger: logging.Logger):
+def log_exceptions(logger: logging.Logger) -> Callable[[Callable], Callable]:
     """
     Decorator that logs any exceptions raised by the decorated method.
 

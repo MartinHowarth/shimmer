@@ -3,6 +3,7 @@
 import pytest
 
 from textwrap import dedent
+from typing import Any
 
 from shimmer.engine.programmable.definition import (
     Instruction,
@@ -21,19 +22,19 @@ def make_dummy_code_block() -> CodeBlock:
     return CodeBlock(instructions=[Instruction(method=return_true) for _ in range(3)])
 
 
-def make_dummy_if(call_if: bool = True):
+def make_dummy_if(call_if: bool = True) -> If:
     """Create a simple If block."""
     code_block = make_dummy_code_block()
     return If(method=return_true if call_if else return_false, code_block=code_block,)
 
 
-def make_dummy_elif_block(call_if: bool = True):
+def make_dummy_elif_block(call_if: bool = True) -> Elif:
     """Create a simple If block."""
     code_block = make_dummy_code_block()
     return Elif(method=return_true if call_if else return_false, code_block=code_block,)
 
 
-def make_dummy_if_else(call_if: bool = True):
+def make_dummy_if_else(call_if: bool = True) -> IfElifElse:
     """Create a simple Elif block."""
     code_block = make_dummy_code_block()
     else_ = Else(code_block=make_dummy_code_block())
@@ -45,30 +46,30 @@ def make_dummy_if_else(call_if: bool = True):
 
 
 @pytest.fixture
-def dummy_code_block():
+def dummy_code_block() -> CodeBlock:
     """Create a simple code block for use in these tests."""
     return make_dummy_code_block()
 
 
 @pytest.fixture
-def another_dummy_code_block():
+def another_dummy_code_block() -> CodeBlock:
     """Create another simple code block for use in these tests."""
     return make_dummy_code_block()
 
 
-def assert_code_block_called(code_block: CodeBlock):
+def assert_code_block_called(code_block: CodeBlock) -> None:
     """Assert if the given code block hasn't been run."""
     for ins in code_block.instructions:
         assert ins.result is not NOT_YET_RUN
 
 
-def assert_code_block_not_called(code_block: CodeBlock):
+def assert_code_block_not_called(code_block: CodeBlock) -> None:
     """Assert if the given code block has been run."""
     for ins in code_block.instructions:
         assert ins.result is NOT_YET_RUN
 
 
-def is_truthy(obj) -> bool:
+def is_truthy(obj: Any) -> bool:
     """Return boolean representation of the object."""
     return bool(obj)
 
@@ -168,7 +169,7 @@ def test_elif(block_call_if, expected_called_block_index):
     else_block = make_dummy_code_block()
 
     first_call_if = return_true if block_call_if[0] else return_false
-    elifs = [make_dummy_if(call_if) for call_if in block_call_if[1:]]
+    elifs = [make_dummy_elif_block(call_if) for call_if in block_call_if[1:]]
     elif_ = IfElifElse(
         method=first_call_if,
         code_block=code_block,

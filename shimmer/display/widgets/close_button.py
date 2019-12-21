@@ -1,37 +1,28 @@
 """Module defining a close button that removes its parent Node from the scene when clicked."""
 
-import cocos
-
-from typing import Optional, Callable
+from dataclasses import replace
 
 from shimmer.display.data_structures import Color
+from shimmer.display.components.mouse_box import bundle_callables
 from shimmer.display.widgets.button import ButtonDefinition, Button
 
 
-def make_close_button_definition(on_release: Optional[Callable],) -> ButtonDefinition:
-    """
-    Create a close button definition that calls the given callback when clicked.
-
-    :param on_release: Action to take when clicked.
-    :return: Definition of the button.
-    """
-    return ButtonDefinition(
-        text="X",
-        base_color=Color(200, 0, 127),
-        hover_color=Color(255, 0, 127),
-        on_release=on_release,
-    )
+CloseButtonDefinitionBase = ButtonDefinition(
+    text="X", base_color=Color(200, 0, 127), hover_color=Color(255, 0, 127)
+)
 
 
 class CloseButton(Button):
     """Standard close button that removes its parent CocosNode when clicked."""
 
-    def __init__(
-        self, rect: Optional[cocos.rect.Rect] = None,
-    ):
-        """See Button for argument definitions."""
-        defn = make_close_button_definition(self._kill_parent)
-        super(CloseButton, self).__init__(defn, rect)
+    def __init__(self, definition: ButtonDefinition):
+        """Create a CloseButton."""
+        if definition.on_release is not None:
+            on_release = bundle_callables(definition.on_release, self._kill_parent)
+        else:
+            on_release = self._kill_parent
+        defn = replace(definition, on_release=on_release)
+        super(CloseButton, self).__init__(defn)
 
     def _kill_parent(self, *_, **__):
         """Kill the parent of this button, which will kill all its children too."""

@@ -22,7 +22,7 @@ class AsyncManager:
         self.__to_be_started: Optional[janus.Queue[Entity]] = None
         self.__loop: Optional[asyncio.AbstractEventLoop] = None
 
-    def set_event_loop(self, loop: asyncio.BaseEventLoop):
+    def set_event_loop(self, loop: asyncio.BaseEventLoop) -> None:
         """Set the event loop on this manager, and initialise it."""
         self.__loop = loop
         self.__to_be_started = janus.Queue(loop=loop)
@@ -43,7 +43,7 @@ class AsyncManager:
             asyncio.create_task(new_entity.run())
             self.entities.append(new_entity)
 
-    def add_new(self, entity: Entity):
+    def add_new(self, entity: Entity) -> None:
         """
         Queue a new entity to be added to this manager.
 

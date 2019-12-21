@@ -53,12 +53,12 @@ class UpdatingNode(cocos.cocosnode.CocosNode):
         pass
 
     @abstractmethod
-    def _update(self, dt: float):
+    def _update(self, dt: float) -> None:
         """Should be overridden to define what this node does in an update."""
         pass
 
     @log_exceptions(log)
-    def update(self, dt: float):
+    def update(self, dt: float) -> None:
         """Called on every frame to determine if this node needs to update itself."""
         # Only update if the value has changed to save on drawing performance.
         self._check_if_dirty()

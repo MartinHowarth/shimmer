@@ -3,9 +3,36 @@
 import cocos
 
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import List, Union, Optional
 
 from .box import Box
+
+
+@dataclass(frozen=True)
+class BoxLayoutDefinition:
+    """
+    Definition of a layout of Boxes.
+
+    Supported layouts are:
+      - vertically column
+      - horizontal row
+      - rectangular grid
+
+    :param spacing: Number of pixels to leave between Boxes.
+    :param boxes_per_row: If given, boxes will fill row-by-row upwards; up to a maximum of `height`.
+    :param boxes_per_column: If given and `boxes_per_row` is not, then boxes will fill
+        column-by-column from left to right with no max width.
+
+        Examples of values of (boxes_per_row, boxes_per_column):
+          - (None, 1) results in a single row of buttons
+          - (1, None) results in a single column of buttons
+          - (x, y)    results in a x by y grid of buttons
+    """
+
+    spacing: int = 10
+    boxes_per_row: Optional[int] = None
+    boxes_per_column: Optional[int] = 1
 
 
 class BoxLayout(Box):
@@ -31,12 +58,12 @@ class BoxLayout(Box):
         return self._spacing
 
     @spacing.setter
-    def spacing(self, value: int):
+    def spacing(self, value: int) -> None:
         """Set the spacing between items in the layout, and update the layout."""
         self._spacing = value
         self.update_layout()
 
-    def remove(self, obj: Union[cocos.cocosnode.CocosNode, Box]):
+    def remove(self, obj: Union[cocos.cocosnode.CocosNode, Box]) -> None:
         """
         Remove an object from this Layout, and update the position of other Boxes if needed.
 
@@ -50,10 +77,10 @@ class BoxLayout(Box):
     def add(
         self,
         child: Union[cocos.cocosnode.CocosNode, Box],
-        z=0,
-        name=None,
-        position=None,
-    ):
+        z: int = 0,
+        name: Optional[str] = None,
+        position: Optional[int] = None,
+    ) -> None:
         """
         Add a child cocosnode. If it's a Box then include it in the layout.
 
@@ -171,3 +198,27 @@ def build_rectangular_grid(
         element_index += 1
 
     return grid_type(elements, spacing=spacing)
+
+
+def create_box_layout(
+    definition: BoxLayoutDefinition, boxes: List[Box]
+) -> Union[BoxRow, BoxColumn]:
+    """
+    Create a layout of boxes based on the given definition.
+
+    :param definition: BoxLayoutDefinition to use.
+    :param boxes: Boxes to include in the layout.
+    :return: BowRow or BoxColumn containing the given boxes.
+    """
+    width_height = definition.boxes_per_row, definition.boxes_per_column
+    if width_height == (None, 1):
+        return BoxRow(boxes, definition.spacing)
+    elif width_height == (1, None):
+        return BoxColumn(boxes, definition.spacing)
+    else:
+        return build_rectangular_grid(
+            boxes,
+            definition.boxes_per_row,
+            definition.boxes_per_column,
+            definition.spacing,
+        )

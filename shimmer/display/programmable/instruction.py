@@ -45,20 +45,15 @@ class InstructionDisplay(Box):
     """
 
     def __init__(
-        self,
-        instruction: Instruction,
-        definition: InstructionDisplayDefinition,
-        rect: Optional[cocos.rect.Rect] = None,
+        self, instruction: Instruction, definition: InstructionDisplayDefinition
     ):
         """
         Create an InstructionDisplay.
 
         :param instruction: The Instruction to display.
         :param definition: Definition of the display of the Instruction.
-        :param rect: The rect defining the size of this instruction. If None then dynamically
-            matches the underlying instruction method_str.
         """
-        super(InstructionDisplay, self).__init__(rect)
+        super(InstructionDisplay, self).__init__()
         self.instruction = instruction
         self.definition = definition
 
@@ -92,15 +87,14 @@ class InstructionDisplay(Box):
         text = self.get_button_text()
         button_definition = replace(self.definition.button_definition, text=text)
 
-        if self._dynamic_size:
-            # If this instruction was created with dynamic size, create the button with dynamic size
-            self.button = Button(button_definition, rect=None)
-            # And update this rect to match the button.
+        self.button = Button(button_definition)
+        if (
+            self.definition.button_definition.height is None
+            or self.definition.button_definition.width is None
+        ):
+            # And update this rect to match the buttons dynamic size
             self.rect = self.button.rect
             self.update_mask()
-        else:
-            # Otherwise copy the original size.
-            self.button = Button(button_definition, rect=self.rect.copy())
         self.add(self.button, z=0)
 
     def update_draggable_anchor(self):

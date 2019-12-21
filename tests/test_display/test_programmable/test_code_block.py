@@ -28,7 +28,7 @@ def test_code_block_display_on_loop(run_gui):
 
     code_block = CodeBlock(instructions=[Instruction(method=wait_1) for _ in range(3)])
 
-    def loop_code_block(_code_block: CodeBlock):
+    def loop_code_block(_code_block: CodeBlock) -> None:
         """Run the instruction repeatedly with a sleep in between."""
         while not cocos.director.director.terminate_app:
             _code_block.run()

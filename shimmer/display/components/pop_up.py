@@ -1,7 +1,7 @@
 """Methods to enable addition/removal of Boxes to other MouseBoxes on mouse events."""
 import logging
 
-from typing import Callable
+from typing import Callable, Any
 
 from shimmer.display.components.box import Box
 from shimmer.display.components.mouse_box import MouseBox
@@ -20,7 +20,7 @@ def create_pop_up_later(pop_up: Box) -> Callable:
     :return: Method to trigger pop_up attachment.
     """
 
-    def create_pop_up(parent: MouseBox, *_, **__):
+    def create_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
         """Actually attach the pop up to the parent."""
         log.debug(f"Created pop up {pop_up} attached to {parent}.")
         parent.add(pop_up)
@@ -38,7 +38,7 @@ def remove_pop_up_later(pop_up: Box) -> Callable:
     :return: Method to trigger pop_up removal.
     """
 
-    def remove_pop_up(parent: MouseBox, *_, **__):
+    def remove_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
         """Actually remove the pop up from the parent."""
         log.debug(f"Removed pop up {pop_up} from {parent}.")
         parent.remove(pop_up)
@@ -60,7 +60,7 @@ def toggle_pop_up_later(pop_up: Box) -> Callable:
     """
     toggled = False
 
-    def toggle_pop_up(parent: MouseBox, *_, **__):
+    def toggle_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
         """Attach or remove the pop_up from the parent, alternating on each call."""
         nonlocal toggled
         if toggled:

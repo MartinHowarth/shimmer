@@ -36,7 +36,7 @@ class Entity:
         """
         return time.monotonic() - self._last_update_time_s
 
-    async def _update(self, dt_s: float):
+    async def _update(self, dt_s: float) -> None:
         """
         Perform the regular actions of this entity.
 

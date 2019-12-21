@@ -2,6 +2,8 @@
 
 import pytest
 
+from dataclasses import replace
+
 from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
 from shimmer.display.data_structures import (
     Calibri,
@@ -27,19 +29,27 @@ def test_text_box(run_gui, dummy_text_box_definition):
 
 def test_text_box_center_align(run_gui, dummy_text_box_definition):
     """A text box should be shown with center-aligned text and wrapped text."""
-    dummy_text_box_definition.label.align = HorizontalAlignment.center
+    dummy_text_box_definition = replace(
+        dummy_text_box_definition,
+        label=replace(
+            dummy_text_box_definition.label, align=HorizontalAlignment.center
+        ),
+    )
     text_box = TextBox(dummy_text_box_definition)
     assert run_gui(test_text_box, text_box)
 
 
 def test_text_box_right_align(run_gui, dummy_text_box_definition):
     """A text box should be shown with right-aligned text and wrapped text."""
-    dummy_text_box_definition.label.align = HorizontalAlignment.right
+    dummy_text_box_definition = replace(
+        dummy_text_box_definition,
+        label=replace(dummy_text_box_definition.label, align=HorizontalAlignment.right),
+    )
     text_box = TextBox(dummy_text_box_definition)
     assert run_gui(test_text_box, text_box)
 
 
-def test_text_box_no_multline(run_gui, dummy_text_box_definition):
+def test_text_box_no_multline(run_gui):
     """A text box should be shown with no wrapped text (i.e. on a single line)."""
     defn = TextBoxDefinition(
         label=LabelDefinition(

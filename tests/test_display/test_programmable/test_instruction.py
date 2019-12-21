@@ -50,7 +50,7 @@ def test_instruction_display_on_loop(run_gui):
 
     instruction = Instruction(method=wait_1)
 
-    def loop_instruction(_instruction: Instruction):
+    def loop_instruction(_instruction: Instruction) -> None:
         """Run the instruction repeatedly with a sleep in between."""
         while not cocos.director.director.terminate_app:
             _instruction.execute()

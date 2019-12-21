@@ -53,7 +53,7 @@ class CodeBlockDisplay(BoxColumn):
 
         for instruction in self.code_block.instructions:
             new_display = InstructionDisplay(
-                instruction, self.definition.instruction_definition, None
+                instruction, self.definition.instruction_definition
             )
             # Insert at start of list so we get a top-to-bottom list, which matches how the code
             # will be executed.

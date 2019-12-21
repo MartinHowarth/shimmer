@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class MouseEventCallable(Protocol):
-    """Protocol defining the type for any callback performed by a MouseBox."""
+    """Protocol defining the signature of any callback performed by a MouseBox."""
 
     def __call__(
         self,
@@ -71,7 +71,7 @@ def bundle_callables(*callables: MouseEventCallable) -> MouseEventCallable:
         dy: Optional[int] = None,
         buttons: Optional[int] = None,
         modifiers: Optional[int] = None,
-    ):
+    ) -> None:
         """Signature varies depending on which mouse event is called."""
         for method in callables:
             method(
@@ -130,7 +130,7 @@ class MouseBox(ActiveBox):
         # bitwise representation of pressed buttons, as pyglet defines them.
         self._currently_pressed: int = 0
 
-    def _on_press(self, x, y, buttons, modifiers):
+    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """
         Called when the Box is clicked by the user.
 
@@ -138,7 +138,8 @@ class MouseBox(ActiveBox):
         to callback.
         """
         log.debug(f"Button {self!r} pressed.")
-        self._currently_pressed = bitwise_add(self._currently_pressed, buttons)
+        if buttons is not None:
+            self._currently_pressed = bitwise_add(self._currently_pressed, buttons)
 
         if self.definition.on_press is None:
             return
@@ -147,7 +148,7 @@ class MouseBox(ActiveBox):
             parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
         )
 
-    def _on_release(self, x, y, buttons, modifiers):
+    def _on_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
         """
         Called when the mouse is released by the user within the button area.
 
@@ -158,7 +159,8 @@ class MouseBox(ActiveBox):
         to callback.
         """
         log.debug(f"Button {self!r} released.")
-        self._currently_pressed = bitwise_remove(self._currently_pressed, buttons)
+        if buttons is not None:
+            self._currently_pressed = bitwise_remove(self._currently_pressed, buttons)
 
         if self.definition.on_release is None:
             return
@@ -167,7 +169,7 @@ class MouseBox(ActiveBox):
             parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
         )
 
-    def _on_hover(self, x, y, dx, dy):
+    def _on_hover(self, x: int, y: int, dx: int, dy: int) -> None:
         """
         Called when the user moves the mouse over the Box without any mouse buttons pressed.
 
@@ -179,7 +181,7 @@ class MouseBox(ActiveBox):
 
         self.definition.on_hover(parent=self, x=x, y=y, dx=dx, dy=dy)
 
-    def _on_unhover(self, x, y, dx, dy):
+    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> None:
         """
         Called when the user moves the mouse off the Box without any mouse buttons pressed.
 
@@ -194,7 +196,9 @@ class MouseBox(ActiveBox):
 
         self.definition.on_unhover(parent=self, x=x, y=y, dx=dx, dy=dy)
 
-    def _on_drag(self, x, y, dx, dy, buttons, modifiers):
+    def _on_drag(
+        self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int
+    ) -> None:
         """
         Called when the mouse is moved by the user with a mouse button pressed.
 
@@ -247,7 +251,9 @@ class MouseBox(ActiveBox):
         """
         return self._currently_dragging and self.definition.on_drag is not None
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_press(
+        self, x: int, y: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
         """
         Cocos director callback when the mouse is pressed.
 
@@ -260,8 +266,11 @@ class MouseBox(ActiveBox):
         if self.contains_coord(*coord):
             self._on_press(*coord, buttons, modifiers)
             return EVENT_HANDLED
+        return EVENT_UNHANDLED
 
-    def on_mouse_release(self, x, y, buttons, modifiers):
+    def on_mouse_release(
+        self, x: int, y: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
         """
         Cocos director callback when the mouse is release.
 
@@ -274,8 +283,9 @@ class MouseBox(ActiveBox):
         if self.contains_coord(*coord):
             self._on_release(*coord, buttons, modifiers)
             return EVENT_HANDLED
+        return EVENT_UNHANDLED
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """
         Cocos director callback when the mouse is moved.
 
@@ -297,8 +307,11 @@ class MouseBox(ActiveBox):
             self._currently_hovered = False
             self._on_unhover(*coord, dx, dy)
             # Do not return EVENT_HANDLED on unhover as we have left the button area.
+        return EVENT_UNHANDLED
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(
+        self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
         """Cocos director callback when the mouse is moved while a mouse button is pressed."""
         if not self._should_handle_mouse_drag():
             return EVENT_UNHANDLED

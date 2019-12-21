@@ -2,7 +2,7 @@
 
 import cocos
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
 from ..components.box import Box
@@ -37,9 +37,14 @@ class TextBox(Box):
         return self.definition.label.text
 
     @text.setter
-    def text(self, value: str):
+    def text(self, value: str) -> None:
         """Set the text of the box and update the display."""
-        self.definition.label.text = value
+        self.set_text(value)
+
+    def set_text(self, text: str) -> None:
+        """Set the text of the box and update the display."""
+        new_label = replace(self.definition.label, text=text)
+        self.definition = replace(self.definition, label=new_label)
         self._update_label()
 
     def _update_label(self):
@@ -49,6 +54,6 @@ class TextBox(Box):
 
         self._label = cocos.text.Label(**self.definition.label.to_pyglet_label_kwargs())
         self.add(self._label)
-        self.rect = cocos.rect.Rect(
-            0, 0, self._label.element.content_width, self._label.element.content_height
+        self.set_size(
+            self._label.element.content_width, self._label.element.content_height
         )

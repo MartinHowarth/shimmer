@@ -13,7 +13,7 @@ def dummy_gauge_definition():
     )
 
 
-def test_fraction_calculations(dummy_gauge_definition: GaugeDefinition):
+def test_fraction_calculations(dummy_gauge_definition: GaugeDefinition) -> None:
     """Test fractions of the gauge calculations."""
     assert dummy_gauge_definition.low_fraction_start == 0.2
     assert dummy_gauge_definition.high_fraction_start == 0.5
@@ -22,7 +22,7 @@ def test_fraction_calculations(dummy_gauge_definition: GaugeDefinition):
     assert dummy_gauge_definition.high_fraction_len == 0.25
 
 
-def test_changing_value(dummy_gauge_definition: GaugeDefinition):
+def test_changing_value(dummy_gauge_definition: GaugeDefinition) -> None:
     """Test changing value of the gauge is handled correctly."""
     # Ensure value_fraction_start is updated
     assert dummy_gauge_definition.value_fraction_start == 0.4

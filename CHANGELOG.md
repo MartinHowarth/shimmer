@@ -7,5 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Init!
+- Add Multiple choice question widget
+- Add Window widget
+- Add dialog window widget
 
 [Unreleased]: https://github.com/MartinHowarth/shimmer/compare/master...HEAD

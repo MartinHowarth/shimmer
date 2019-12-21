@@ -4,7 +4,8 @@ import cocos
 import pyglet
 import pytest
 
-from typing import Optional, List
+from textwrap import dedent
+from typing import Optional, List, Callable
 
 
 class PassOrFailInput(cocos.layer.Layer):
@@ -20,7 +21,7 @@ class PassOrFailInput(cocos.layer.Layer):
         :param test_description: Description of the test to display.
         """
         super(PassOrFailInput, self).__init__()
-        self.passed: Optional[bool] = None
+        self.passed: bool = False
         name = cocos.text.Label(
             test_name,
             font_name="calibri",
@@ -31,7 +32,7 @@ class PassOrFailInput(cocos.layer.Layer):
         )
         name.position = 0, cocos.director.director.get_window_size()[1]
         description = cocos.text.RichLabel(
-            test_description or "",
+            dedent(test_description or "").strip(),
             font_name="calibri",
             font_size=14,
             anchor_x="left",
@@ -71,9 +72,11 @@ class SimpleEventLayer(cocos.layer.Layer):
 
 @pytest.fixture
 def run_gui():
-    """Fixture to run the given children and get user input to pass/fail the test."""
+    """Fixture to run graphical tests and get user input to pass/fail the test."""
 
-    def run_scene(test_func, *children: List[cocos.cocosnode.CocosNode]):
+    def run_scene(
+        test_func: Callable, *children: List[cocos.cocosnode.CocosNode]
+    ) -> bool:
         """
         Run a cocos director with the given test function description and display the children.
 
@@ -92,14 +95,12 @@ def run_gui():
         cocos.director.director.run(scene)
         return input_handler.passed
 
-    return run_scene
-
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_pyfunc_call():
-    """Intercept the setup of each test to reset the cocos director settings."""
-    cocos.director.director.init(resizable=True)
+    window = cocos.director.director.init(resizable=True)
     cocos.director.director.show_FPS = True
     cocos.director.director.window.set_location(100, 100)
-    yield
+    yield run_scene
     cocos.director.director.terminate_app = True
+    # Running director.init seems to re-create every window that has previously existed
+    # (i.e. one per test). Not sure why it does that, but directly closing the window at the end
+    # of the test fixes the problem.
+    window.close()
