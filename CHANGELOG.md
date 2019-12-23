@@ -10,5 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Multiple choice question widget
 - Add Window widget
 - Add dialog window widget
+- Add basis for a mouse drawing system
+- Add selectable boxes
+- Add drag-to-select system
 
 [Unreleased]: https://github.com/MartinHowarth/shimmer/compare/master...HEAD

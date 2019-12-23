@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Tuple, Dict, Any, List, Optional
 
 
-@dataclass
+@dataclass(frozen=True)
 class Color:
     """Definition of an RGB + alpha color."""
 
@@ -28,6 +28,10 @@ ActiveGreen = Color(0, 200, 255)
 PassiveBlue = Color(0, 120, 255)
 ActiveBlue = Color(0, 200, 255)
 MutedBlue = Color(0, 80, 255)
+
+LightGrey = Color(160, 160, 190)
+Grey = Color(130, 130, 170)
+DarkGrey = Color(100, 100, 150)
 
 
 @dataclass

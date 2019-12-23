@@ -12,7 +12,7 @@ from shimmer.display.data_structures import Color
 log = logging.getLogger(__name__)
 
 
-def create_rect(width: int, height: int, color: Color) -> cocos.layer.ColorLayer:
+def create_color_rect(width: int, height: int, color: Color) -> cocos.layer.ColorLayer:
     """Create a colored rectangle."""
     return cocos.layer.ColorLayer(*color.as_tuple_alpha(), width=width, height=height)
 

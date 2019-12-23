@@ -8,7 +8,7 @@ import cocos
 
 from typing import Optional
 from ..data_structures import Color, HorizontalAlignment, VerticalAlignment
-from ..primitives import create_rect
+from ..primitives import create_color_rect
 
 
 class Box(cocos.cocosnode.CocosNode):
@@ -50,6 +50,15 @@ class Box(cocos.cocosnode.CocosNode):
         self._update_rect(value)
         self._update_background()
 
+    @property
+    def world_rect(self) -> cocos.rect.Rect:
+        """Get the rect for this Box in world coordinate space."""
+        # Boxes set their rect position to be 0, 0 (the Box's position is set to the rect coords
+        # instead).
+        return cocos.rect.Rect(
+            *self.point_to_world((0, 0)), self.rect.width, self.rect.height
+        )
+
     def _update_rect(self, rect: cocos.rect.Rect) -> None:
         """Update the position and size of this Box to the given rect."""
         self.position = rect.x, rect.y
@@ -84,7 +93,7 @@ class Box(cocos.cocosnode.CocosNode):
         if self._background_color is None:
             return
 
-        self._background = create_rect(
+        self._background = create_color_rect(
             self.rect.width, self.rect.height, self._background_color,
         )
         self._background.position = (0, 0)
@@ -92,8 +101,8 @@ class Box(cocos.cocosnode.CocosNode):
 
     def set_transform_anchor(
         self,
-        anchor_x: Optional[HorizontalAlignment],
-        anchor_y: Optional[VerticalAlignment],
+        anchor_x: Optional[HorizontalAlignment] = None,
+        anchor_y: Optional[VerticalAlignment] = None,
     ) -> None:
         """
         Set the cocos transform anchor to the given alignments.
@@ -132,8 +141,8 @@ class Box(cocos.cocosnode.CocosNode):
     def set_position_in_alignment_with(
         self,
         other: "Box",
-        align_x: Optional[HorizontalAlignment],
-        align_y: Optional[VerticalAlignment],
+        align_x: Optional[HorizontalAlignment] = None,
+        align_y: Optional[VerticalAlignment] = None,
     ) -> None:
         """
         Set the position of this Box to be aligned with the given point of the other Box.

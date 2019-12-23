@@ -12,10 +12,10 @@ import cocos
 from shimmer.display.components.mouse_box import (
     MouseBoxDefinition,
     MouseBox,
-    bitwise_contains,
 )
+from shimmer.display.helpers import bitwise_contains
 from shimmer.display.data_structures import Color, PassiveBlue, ActiveBlue, MutedBlue
-from shimmer.display.primitives import create_rect
+from shimmer.display.primitives import create_color_rect
 
 
 @dataclass(frozen=True)
@@ -97,7 +97,7 @@ class Button(MouseBox):
 
         # Include the `or 1` to override cocos default behaviour to make the
         # layer the size of the entire window.
-        self.color_rect = create_rect(
+        self.color_rect = create_color_rect(
             self.rect.width or 1, self.rect.height or 1, self.definition.base_color
         )
         self.add(self.color_rect, z=-1)

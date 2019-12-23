@@ -5,7 +5,10 @@ import pyglet
 import pytest
 
 from textwrap import dedent
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Tuple, Any
+
+from shimmer.display.data_structures import LabelDefinition
+from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
 
 
 class PassOrFailInput(cocos.layer.Layer):
@@ -104,3 +107,16 @@ def run_gui():
     # (i.e. one per test). Not sure why it does that, but directly closing the window at the end
     # of the test fixes the problem.
     window.close()
+
+
+@pytest.fixture
+def updatable_text_box() -> Tuple[TextBox, Callable[[Any], None]]:
+    """Fixture to create a text box whose text can be updated using the given callback."""
+    text_box = TextBox(TextBoxDefinition(LabelDefinition("<placeholder>", width=500)))
+    text_box.position = 0, 300
+
+    def update_text_box(text: Any) -> None:
+        nonlocal text_box
+        text_box.set_text(str(text))
+
+    return text_box, update_text_box

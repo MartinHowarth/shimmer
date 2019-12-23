@@ -3,7 +3,7 @@
 from dataclasses import replace
 
 from shimmer.display.data_structures import Color
-from shimmer.display.components.mouse_box import bundle_callables
+from shimmer.display.helpers import bundle_callables
 from shimmer.display.widgets.button import ButtonDefinition, Button
 
 

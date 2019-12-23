@@ -5,7 +5,7 @@ import cocos
 from dataclasses import dataclass, replace
 from typing import Dict, Optional
 
-from ..primitives import create_rect
+from ..primitives import create_color_rect
 from ..data_structures import (
     Color,
     LabelDefinition,
@@ -15,7 +15,7 @@ from ..data_structures import (
 )
 from ..components.draggable_anchor import DraggableAnchor
 from ..components.box import Box, ActiveBox
-from ..components.mouse_box import MouseBox, MouseEventCallable
+from ..components.mouse_box import MouseBox, MouseClickEventCallable
 from shimmer.display.widgets.close_button import (
     CloseButton,
     CloseButtonDefinitionBase,
@@ -42,7 +42,7 @@ class WindowDefinition:
     background_color: Color = Color(20, 20, 20)
 
     # Callback to call when the window is closed using the close button.
-    on_close: Optional[MouseEventCallable] = None
+    on_close: Optional[MouseClickEventCallable] = None
 
     def __post_init__(self):
         """Validation checks for inter-dependent fields."""
@@ -165,7 +165,7 @@ class Window(ActiveBox):
 
     def _update_title(self):
         """Recreate the title."""
-        if self._title is not None:
+        if self._title is not None and self._title in self:
             self.remove(self._title)
 
         if self.definition.title is None:
@@ -179,7 +179,7 @@ class Window(ActiveBox):
         if self._title_bar_background is not None:
             self.remove(self._title_bar_background)
 
-        self._title_bar_background = create_rect(
+        self._title_bar_background = create_color_rect(
             self.rect.width, self.title_bar_height, self.definition.title_bar_color,
         )
         self._title_bar_background.position = (
@@ -193,7 +193,7 @@ class Window(ActiveBox):
         if self._background is not None:
             self.remove(self._background)
 
-        self._background = create_rect(
+        self._background = create_color_rect(
             self.rect.width,
             self.rect.height - self.title_bar_height,
             self.definition.background_color,

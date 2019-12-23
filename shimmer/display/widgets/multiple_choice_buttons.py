@@ -9,7 +9,7 @@ For example, this can be used to create:
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 
-from typing import List, Optional, Union, Dict, Any
+from typing import Set, Optional, Union, Dict, Any
 
 from ..components.box import Box
 from ..components.box_layout import (
@@ -18,7 +18,8 @@ from ..components.box_layout import (
     create_box_layout,
     BoxLayoutDefinition,
 )
-from ..components.mouse_box import MouseEventCallable, bundle_callables
+from ..components.mouse_box import MouseClickEventCallable
+from shimmer.display.helpers import bundle_callables
 from .button import ButtonDefinition, ToggleButton
 from .question_definition import MultipleChoiceQuestionDefinition
 
@@ -50,9 +51,9 @@ class MultipleChoiceButtons(Box):
         self.set_to_defaults()
 
     @property
-    def currently_selected(self) -> List[str]:
+    def currently_selected(self) -> Set[str]:
         """Return a list of the currently selected options."""
-        return list(
+        return set(
             item[0]
             for item in filter(
                 lambda item: item[1] is True, self._current_selection.items()
@@ -72,8 +73,8 @@ class MultipleChoiceButtons(Box):
                 button.is_toggled = False
 
     def _create_choice_callback_wrapper(
-        self, chosen: str, existing_on_press: Optional[MouseEventCallable]
-    ) -> MouseEventCallable:
+        self, chosen: str, existing_on_press: Optional[MouseClickEventCallable]
+    ) -> MouseClickEventCallable:
         """
         Create callback to notify this multiple choice of a button press.
 

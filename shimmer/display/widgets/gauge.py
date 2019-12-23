@@ -3,7 +3,7 @@
 import logging
 
 from shimmer.display.data_structures import Color
-from shimmer.display.primitives import create_rect
+from shimmer.display.primitives import create_color_rect
 from shimmer.engine.widgets.gauge import GaugeDefinition
 from shimmer.display.primitives import UpdatingNode
 
@@ -35,7 +35,7 @@ class GaugeDisplay(UpdatingNode):
         self.indicator_height = 3
 
         self.init_background()
-        self.indicator = create_rect(
+        self.indicator = create_color_rect(
             self.width, self.indicator_height, self.indicator_color
         )
         self.indicator.draw()
@@ -45,19 +45,19 @@ class GaugeDisplay(UpdatingNode):
 
     def init_background(self) -> None:
         """Create the background colors of the gauge."""
-        background = create_rect(self.width, self.height, self.bg_color)
+        background = create_color_rect(self.width, self.height, self.bg_color)
         background.position = 0, 0  # Draw at origin of parent layer
         background.draw()
         self.add(background)
 
         low_len = int(self.definition.low_fraction_len * self.height)
-        low = create_rect(self.width, low_len, self.low_color)
+        low = create_color_rect(self.width, low_len, self.low_color)
         low.position = 0, int(self.definition.low_fraction_start * self.height)
         low.draw()
         self.add(low)
 
         high_len = int(self.definition.high_fraction_len * self.height)
-        high = create_rect(self.width, high_len, self.high_color)
+        high = create_color_rect(self.width, high_len, self.high_color)
         high.position = 0, int(self.definition.high_fraction_start * self.height)
         high.draw()
         self.add(high)

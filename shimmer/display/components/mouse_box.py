@@ -4,37 +4,61 @@ import cocos
 import logging
 
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Optional, Protocol
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
+from shimmer.display.helpers import bitwise_add, bitwise_remove, bitwise_contains
 from shimmer.display.primitives import Point2d
-from shimmer.display.components.box import ActiveBox, Box
-
+from shimmer.display.components.box import ActiveBox
 
 log = logging.getLogger(__name__)
 
 
-class MouseEventCallable(Protocol):
-    """Protocol defining the signature of any callback performed by a MouseBox."""
+class MouseClickEventCallable(Protocol):
+    """Protocol defining the signature of on_press and on_release callbacks."""
 
     def __call__(
         self,
         parent: "MouseBox",  # This is the MouseBox that handled the event.
         x: int,
         y: int,
-        dx: Optional[int] = None,
-        dy: Optional[int] = None,
-        buttons: Optional[int] = None,
-        modifiers: Optional[int] = None,
+        buttons: int,
+        modifiers: int,
     ) -> None:
-        """
-        The signature of mouse event callbacks.
+        """The signature of mouse click event callbacks."""
+        pass
 
-        The following parameters depend on the event that has occurred - see pyglet documentation:
-            (dx, dy) are always given together; but not always given.
-            (buttons, modifiers) are always given together; but not always given.
-        """
+
+class MouseMotionEventCallable(Protocol):
+    """Protocol defining the signature of on_hover and on_unhover callbacks."""
+
+    def __call__(
+        self,
+        parent: "MouseBox",  # This is the MouseBox that handled the event.
+        x: int,
+        y: int,
+        dx: int,
+        dy: int,
+    ) -> None:
+        """The signature of mouse motion event callbacks."""
+        pass
+
+
+class MouseDragEventCallable(Protocol):
+    """Protocol defining the signature of on_drag callback."""
+
+    def __call__(
+        self,
+        parent: "MouseBox",  # This is the MouseBox that handled the event.
+        x: int,
+        y: int,
+        dx: int,
+        dy: int,
+        buttons: int,
+        modifiers: int,
+    ) -> None:
+        """The signature of mouse drag event callbacks."""
         pass
 
 
@@ -46,62 +70,11 @@ class MouseBoxDefinition:
     Method definitions are optional and are called with the mouse event arguments as keywords.
     """
 
-    parent: Optional[Box] = None
-    on_press: Optional[MouseEventCallable] = None
-    on_release: Optional[MouseEventCallable] = None
-    on_hover: Optional[MouseEventCallable] = None
-    on_unhover: Optional[MouseEventCallable] = None
-    on_drag: Optional[MouseEventCallable] = None
-
-
-def bundle_callables(*callables: MouseEventCallable) -> MouseEventCallable:
-    """
-    Bundle many callables into a single function.
-
-    This allows for an event callable defined in MouseBoxDefinition to take multiple actions.
-
-    Callables will be invoked in the order given.
-    """
-
-    def bundle_callables_inner(
-        parent: MouseBox,
-        x: int,
-        y: int,
-        dx: Optional[int] = None,
-        dy: Optional[int] = None,
-        buttons: Optional[int] = None,
-        modifiers: Optional[int] = None,
-    ) -> None:
-        """Signature varies depending on which mouse event is called."""
-        for method in callables:
-            method(
-                parent=parent,
-                x=x,
-                y=y,
-                dx=dx,
-                dy=dy,
-                buttons=buttons,
-                modifiers=modifiers,
-            )
-
-    return bundle_callables_inner
-
-
-def bitwise_add(a: int, b: int) -> int:
-    """Merge two binary masks together."""
-    return a | b
-
-
-def bitwise_remove(a: int, b: int) -> int:
-    """Remove a binary mask from another mask."""
-    if bitwise_contains(a, b):
-        return a ^ b
-    return a
-
-
-def bitwise_contains(a: int, b: int) -> bool:
-    """Return True if the mask `b` is contained in `a`."""
-    return bool(a & b)
+    on_press: Optional[MouseClickEventCallable] = None
+    on_release: Optional[MouseClickEventCallable] = None
+    on_hover: Optional[MouseMotionEventCallable] = None
+    on_unhover: Optional[MouseMotionEventCallable] = None
+    on_drag: Optional[MouseDragEventCallable] = None
 
 
 class MouseBox(ActiveBox):
@@ -117,7 +90,7 @@ class MouseBox(ActiveBox):
         :param rect: Rectangular area that the Box will consider mouses events from.
         """
         super(MouseBox, self).__init__(rect)
-        self.definition: MouseBoxDefinition = replace(definition, parent=self)
+        self.definition: MouseBoxDefinition = definition
 
         # Whether the mouse is currently hovered over the Box or not.
         self._currently_hovered: bool = False
@@ -137,7 +110,7 @@ class MouseBox(ActiveBox):
         Calls the `on_press` callback from the definition, passing information about the click to
         to callback.
         """
-        log.debug(f"Button {self!r} pressed.")
+        log.debug(f"Button {buttons} pressed on {self}.")
         if buttons is not None:
             self._currently_pressed = bitwise_add(self._currently_pressed, buttons)
 
@@ -158,16 +131,17 @@ class MouseBox(ActiveBox):
         Calls the `on_release` callback from the definition, passing information about the click to
         to callback.
         """
-        log.debug(f"Button {self!r} released.")
+        log.debug(f"Button {buttons} released on {self}.")
+
+        if self.definition.on_release is not None:
+            self.definition.on_release(
+                parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
+            )
+
+        # Remove from currently selected after the on_release callback in case it is needed
+        # in a sub class.
         if buttons is not None:
             self._currently_pressed = bitwise_remove(self._currently_pressed, buttons)
-
-        if self.definition.on_release is None:
-            return
-
-        self.definition.on_release(
-            parent=self, x=x, y=y, buttons=buttons, modifiers=modifiers
-        )
 
     def _on_hover(self, x: int, y: int, dx: int, dy: int) -> None:
         """

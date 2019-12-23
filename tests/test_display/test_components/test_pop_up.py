@@ -7,8 +7,8 @@ from shimmer.display.components.box import Box
 from shimmer.display.components.mouse_box import (
     MouseBox,
     MouseBoxDefinition,
-    bundle_callables,
 )
+from shimmer.display.helpers import bundle_callables
 from shimmer.display.components.pop_up import (
     create_pop_up_later,
     remove_pop_up_later,

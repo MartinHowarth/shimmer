@@ -16,10 +16,7 @@ class MultipleChoiceResponseCallback(Protocol):
     """Protocol defining the signature of a callback when a multiple choice option is selected."""
 
     def __call__(
-        self,
-        currently_selected: Sequence[str],
-        changed_choice: str,
-        choice_state: bool,
+        self, currently_selected: Set[str], changed_choice: str, choice_state: bool,
     ) -> None:
         """Function signature of a multiple choice response callback."""
         pass
