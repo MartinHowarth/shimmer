@@ -20,10 +20,10 @@ def create_pop_up_later(pop_up: Box) -> Callable:
     :return: Method to trigger pop_up attachment.
     """
 
-    def create_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
+    def create_pop_up(box: MouseBox, *_: Any, **__: Any) -> None:
         """Actually attach the pop up to the parent."""
-        log.debug(f"Created pop up {pop_up} attached to {parent}.")
-        parent.add(pop_up)
+        log.debug(f"Created pop up {pop_up} attached to {box}.")
+        box.add(pop_up)
 
     return create_pop_up
 
@@ -38,10 +38,10 @@ def remove_pop_up_later(pop_up: Box) -> Callable:
     :return: Method to trigger pop_up removal.
     """
 
-    def remove_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
+    def remove_pop_up(box: MouseBox, *_: Any, **__: Any) -> None:
         """Actually remove the pop up from the parent."""
-        log.debug(f"Removed pop up {pop_up} from {parent}.")
-        parent.remove(pop_up)
+        log.debug(f"Removed pop up {pop_up} from {box}.")
+        box.remove(pop_up)
 
     return remove_pop_up
 
@@ -60,15 +60,15 @@ def toggle_pop_up_later(pop_up: Box) -> Callable:
     """
     toggled = False
 
-    def toggle_pop_up(parent: MouseBox, *_: Any, **__: Any) -> None:
+    def toggle_pop_up(box: MouseBox, *_: Any, **__: Any) -> None:
         """Attach or remove the pop_up from the parent, alternating on each call."""
         nonlocal toggled
         if toggled:
-            log.debug(f"Toggled remove pop up {pop_up} from {parent}.")
-            parent.remove(pop_up)
+            log.debug(f"Toggled remove pop up {pop_up} from {box}.")
+            box.remove(pop_up)
         else:
-            log.debug(f"Toggled create pop up {pop_up} from {parent}.")
-            parent.add(pop_up)
+            log.debug(f"Toggled create pop up {pop_up} from {box}.")
+            box.add(pop_up)
         toggled = not toggled
 
     return toggle_pop_up

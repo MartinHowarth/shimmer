@@ -109,20 +109,20 @@ class DrawingBox(ABC, MouseBox):
         super(DrawingBox, self).__init__(definition, rect)
 
     def on_press(
-        self, parent: MouseBox, x: int, y: int, buttons: int, modifiers: int,
+        self, box: MouseBox, x: int, y: int, buttons: int, modifiers: int,
     ) -> None:
         """Placeholder for subclasses to define what happens when a drawing begins."""
         pass
 
     def on_release(
-        self, parent: MouseBox, x: int, y: int, buttons: int, modifiers: int
+        self, box: MouseBox, x: int, y: int, buttons: int, modifiers: int
     ) -> None:
         """Placeholder for subclasses to define what happens when a drawing is completed."""
         pass
 
     def on_drag(
         self,
-        parent: MouseBox,
+        box: MouseBox,
         x: int,
         y: int,
         dx: int,
@@ -190,7 +190,7 @@ class RectDrawingBox(DrawingBox):
         self.add(self._rect_displays[buttons])
 
     def on_press(
-        self, parent: MouseBox, x: int, y: int, buttons: int, modifiers: int,
+        self, box: MouseBox, x: int, y: int, buttons: int, modifiers: int,
     ) -> None:
         """
         Record the start of the rect drawing.
@@ -216,7 +216,7 @@ class RectDrawingBox(DrawingBox):
             self.drawing_definition.on_start(self._rects_in_progress[buttons])
 
     def on_release(
-        self, parent: MouseBox, x: int, y: int, buttons: int, modifiers: int
+        self, box: MouseBox, x: int, y: int, buttons: int, modifiers: int
     ) -> None:
         """
         Record the end of the drawing.
@@ -240,7 +240,7 @@ class RectDrawingBox(DrawingBox):
 
     def on_drag(
         self,
-        parent: MouseBox,
+        box: MouseBox,
         x: int,
         y: int,
         dx: int,

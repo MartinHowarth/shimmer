@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "shimmer"
 version = "0.1.0"
-description = "An easy to use game engine, based on cocos2d and pyglet."
+description = "Create games in python, without hassle - batteries included!"
 
 license = "MIT"
 

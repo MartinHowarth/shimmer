@@ -6,8 +6,8 @@ A Box is a CocosNode that defines an area.
 
 import cocos
 
-from typing import Optional
-from ..data_structures import Color, HorizontalAlignment, VerticalAlignment
+from typing import Optional, Union
+from ..data_structures import Color, HorizontalAlignment, VerticalAlignment, ZIndexEnum
 from ..primitives import create_color_rect
 
 
@@ -70,6 +70,53 @@ class Box(cocos.cocosnode.CocosNode):
         """Update the size of this Box without changing position."""
         self._update_rect(cocos.rect.Rect(*self.position, width, height))
         self._update_background()
+
+    def get_z_value(self) -> int:
+        """
+        Get the z value of this Box in its parents children list.
+
+        Raises ValueError if this child is not a child of parent (should never happen).
+        """
+        for z, child in self.parent.children:
+            if child is self:
+                return z
+        raise ValueError(f"{self} is not a child of its parent.")
+
+    def set_z_value(self, z: Union[int, ZIndexEnum]) -> None:
+        """
+        Set the z value of this box in its parents list of children.
+
+        The z value controls ordering of drawing, and ordering of event handling.
+
+        Higher z means:
+          - Drawn on top of lower z nodes.
+          - Receives events first (and therefore may stop them propagating to lower z nodes)
+                Note: This happens because in ActiveBox we push own events before children do.
+
+        Warning: This removes and re-adds this node to the parent, so `on_exit` and `on_enter`
+            are called.
+            For ActiveBoxes this will remove and re-add it to the event stack. So if the z value
+            is changed during an event callback, the event may skip children of THIS node.
+            This can be worked around by consuming the event when changing the Z value, and
+            re-dispatching it (see FocusBox for an example of this).
+
+        :param z: Int or member of ZIndexEnum to set the z value to.
+        """
+        if z is ZIndexEnum.top:
+            # Children are in z order from lowest to highest, so highest z is the last one.
+            # Children are stored as the tuple (z, node)
+            print(self.parent.children)
+            z = self.parent.children[-1][0] + 1
+        elif z is ZIndexEnum.bottom:
+            # Children are in z order from lowest to highest, so lowest z is the first one.
+            # Children are stored as the tuple (z, node)
+            z = self.parent.children[0][0] - 1
+
+        # Remove and re-add to insert this node in the child list correctly, and perform
+        # `on_exit` and `on_enter` to make sure that the node is in the correct place in the
+        # event stack.
+        self.parent.remove(self)
+        self.parent.add(self, z=z)
 
     @property
     def background_color(self) -> Optional[Color]:

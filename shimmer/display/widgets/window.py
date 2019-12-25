@@ -13,9 +13,14 @@ from ..data_structures import (
     VerticalTextAlignment,
     HorizontalAlignment,
 )
+from ..components.box import Box
 from ..components.draggable_anchor import DraggableAnchor
-from ..components.box import Box, ActiveBox
-from ..components.mouse_box import MouseBox, MouseClickEventCallable
+from ..components.focus import make_focusable
+from ..components.mouse_box import (
+    MouseBox,
+    MouseClickEventCallable,
+    MouseVoidBoxDefinition,
+)
 from shimmer.display.widgets.close_button import (
     CloseButton,
     CloseButtonDefinitionBase,
@@ -23,8 +28,15 @@ from shimmer.display.widgets.close_button import (
 
 
 @dataclass(frozen=True)
-class WindowDefinition:
-    """Definition of the visual style of a Window."""
+class WindowDefinition(MouseVoidBoxDefinition):
+    """
+    Definition of the visual style of a Window.
+
+    Inherits from MouseVoidBoxDefinition so that the default window swallows all mouse events
+    that happen within it. Other components can be added into the window that can receive
+    those events first. This prevents users clicking on a window and something underneath
+    the window receiving the event accidentally.
+    """
 
     width: int = 200
     # Height does not include the title bar, i.e. this is the height of the window body.
@@ -52,11 +64,18 @@ class WindowDefinition:
             )
 
 
-class Window(ActiveBox):
+class Window(MouseBox):
     """
     A Window is a draggable, closeable Box with a title bar.
 
     It has an inner_box for containing children for displaying inside the window.
+
+    The window itself is a MouseVoidBox which prevents all mouse events propagating further.
+    This means that windows can be appear above other nodes without the user accidentally
+    interacting with the node underneath.
+
+    All nodes added to the window are placed above this VoidBox so they receive the mouse events
+    first.
     """
 
     def __init__(self, definition: WindowDefinition):
@@ -71,9 +90,10 @@ class Window(ActiveBox):
         self._create_title()
         # Set the rect of this window to include the title bar.
         super(Window, self).__init__(
+            definition,
             cocos.rect.Rect(
                 0, 0, definition.width, definition.height + self.title_bar_height
-            )
+            ),
         )
         self.title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[cocos.layer.ColorLayer] = None
@@ -82,6 +102,7 @@ class Window(ActiveBox):
         self._update_background()
         self._update_close_button()
         self._update_drag_zone()
+        make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
         self.inner_box: Box = Box(self._inner_box_rect)

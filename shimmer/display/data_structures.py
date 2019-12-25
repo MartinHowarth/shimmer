@@ -84,6 +84,13 @@ class VerticalTextAlignment(Enum):
     baseline = "baseline"
 
 
+class ZIndexEnum(Enum):
+    """Indicators of where in the stack of cocos children to add a child."""
+
+    top = "top"
+    bottom = "bottom"
+
+
 @dataclass(frozen=True)
 class LabelDefinition:
     """

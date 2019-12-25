@@ -84,8 +84,8 @@ class MultipleChoiceButtons(Box):
         :param existing_on_press: Optional on_press callback that already is defined on the button.
         """
 
-        def inner(parent: ToggleButton, *_: Any, **__: Any) -> None:
-            self._handle_button_select_or_deselect(chosen, parent)
+        def inner(box: ToggleButton, *_: Any, **__: Any) -> None:
+            self._handle_button_select_or_deselect(chosen, box)
 
         if existing_on_press:
             return bundle_callables(inner, existing_on_press)
