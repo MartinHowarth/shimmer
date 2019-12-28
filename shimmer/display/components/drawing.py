@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from typing import Dict, Callable, Optional, Tuple
 
 from ..data_structures import ActiveGreen, Color
+from ..components.box import BoxDefinition
 from .mouse_box import MouseBox, MouseBoxDefinition
 
 
@@ -97,16 +98,20 @@ class RectDrawingBoxDefinition:
 class DrawingBox(ABC, MouseBox):
     """Base class for defining boxes that can be drawn inside."""
 
-    def __init__(self, rect: cocos.rect.Rect):
+    def __init__(self, definition: BoxDefinition):
         """
         Creates a new DrawableBox.
 
-        :param rect: Definition of the rectangle that this Box encompasses.
+        :param definition: Definition of the shape of this Box.
         """
         definition = MouseBoxDefinition(
-            on_press=self.on_press, on_release=self.on_release, on_drag=self.on_drag,
+            width=definition.width,
+            height=definition.height,
+            on_press=self.on_press,
+            on_release=self.on_release,
+            on_drag=self.on_drag,
         )
-        super(DrawingBox, self).__init__(definition, rect)
+        super(DrawingBox, self).__init__(definition)
 
     def on_press(
         self, box: MouseBox, x: int, y: int, buttons: int, modifiers: int,

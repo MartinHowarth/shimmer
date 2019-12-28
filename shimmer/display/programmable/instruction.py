@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, replace
 from typing import Optional
 
 
-from shimmer.display.components.box import Box
+from shimmer.display.components.box import Box, BoxDefinition
 from shimmer.display.data_structures import Color, ActiveGreen
 from shimmer.display.components.draggable_anchor import DraggableAnchor
 from shimmer.display.widgets.button import ButtonDefinition, Button
@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class InstructionDisplayDefinition:
+class InstructionDisplayDefinition(BoxDefinition):
     """Definition of the visual display of an Instruction."""
 
     # The main element of this instruction is a button. If the text is None, then it will be
@@ -53,9 +53,9 @@ class InstructionDisplay(Box):
         :param instruction: The Instruction to display.
         :param definition: Definition of the display of the Instruction.
         """
-        super(InstructionDisplay, self).__init__()
+        super(InstructionDisplay, self).__init__(definition)
         self.instruction = instruction
-        self.definition = definition
+        self.definition: InstructionDisplayDefinition = definition
 
         self.instruction.on_execute_start = self.show_mask
         self.instruction.on_execute_complete = self.hide_mask

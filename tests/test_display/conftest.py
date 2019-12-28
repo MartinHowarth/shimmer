@@ -1,6 +1,7 @@
 """Module defining global pytest fixtures for GUI tests."""
 
 import cocos
+import os
 import pyglet
 import pytest
 
@@ -9,6 +10,12 @@ from typing import Optional, List, Callable, Tuple, Any
 
 from shimmer.display.data_structures import LabelDefinition
 from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
+
+from .mock_gui import MockWindow, MockDirector
+from .mock_mouse import MockMouse
+
+
+SKIP_GUI_TESTS = "SKIP_GUI_TESTS"
 
 
 class PassOrFailInput(cocos.layer.Layer):
@@ -76,6 +83,8 @@ class SimpleEventLayer(cocos.layer.Layer):
 @pytest.fixture
 def run_gui():
     """Fixture to run graphical tests and get user input to pass/fail the test."""
+    if SKIP_GUI_TESTS in os.environ:
+        pytest.skip(f"Test skipped because {SKIP_GUI_TESTS} is set in environment.")
 
     def run_scene(
         test_func: Callable, *children: List[cocos.cocosnode.CocosNode]
@@ -112,7 +121,9 @@ def run_gui():
 @pytest.fixture
 def updatable_text_box() -> Tuple[TextBox, Callable[[Any], None]]:
     """Fixture to create a text box whose text can be updated using the given callback."""
-    text_box = TextBox(TextBoxDefinition(LabelDefinition("<placeholder>", width=500)))
+    text_box = TextBox(
+        TextBoxDefinition(label=LabelDefinition("<placeholder>", width=500))
+    )
     text_box.position = 0, 300
 
     def update_text_box(text: Any) -> None:
@@ -120,3 +131,29 @@ def updatable_text_box() -> Tuple[TextBox, Callable[[Any], None]]:
         text_box.set_text(str(text))
 
     return text_box, update_text_box
+
+
+@pytest.fixture
+def mock_gui(mocker):
+    """Mock out the reliance of cocos on graphical elements existing."""
+    # Have to patch director everywhere it's imported unfortunately.
+    mock_director = MockDirector()
+    mocker.patch("cocos.director.director", new=mock_director)
+    mocker.patch("cocos.camera.director", new=mock_director)
+    mocker.patch("cocos.layer.base_layers.director", new=mock_director)
+    mocker.patch("cocos.layer.util_layers.director", new=mock_director)
+    mocker.patch("pyglet.window.Window", new=MockWindow)
+
+    # Make sure we've patched them correctly. This is mostly just future-proofing against
+    # refactors in pyglet or cocos.
+    assert cocos.camera.director is mock_director
+    assert cocos.director.director is mock_director
+    assert issubclass(cocos.director.window.Window, MockWindow)
+
+    cocos.director.director.init()
+
+
+@pytest.fixture
+def mock_mouse():
+    """Fixture to provide a mock hardware mouse for test to simulate mouse events."""
+    return MockMouse()

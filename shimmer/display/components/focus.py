@@ -12,10 +12,10 @@ with.
 
 import cocos
 
-from typing import List
+from typing import List, Optional
 
 from ..data_structures import ZIndexEnum
-from .box import Box
+from .box import Box, BoxDefinition
 from .mouse_box import MouseBox, MouseBoxDefinition
 
 
@@ -36,6 +36,23 @@ class _FocusStackHandler:
         Typically to be used as a singleton.
         """
         self._focus_stack: List[FocusBox] = []
+
+    @property
+    def current_focus(self) -> Optional["FocusBox"]:
+        """
+        Return the currently focused FocusBox.
+
+        If there is no current focus, return None.
+        """
+        if not self._focus_stack:
+            return None
+
+        # Top of the stack should be the only one that could be focused.
+        # However, it could also not be currently focused, so test for that.
+        top = self._focus_stack[0]
+        if top.is_focused:
+            return top
+        return None
 
     def register_focus_box(self, focus_box: "FocusBox") -> None:
         """
@@ -73,7 +90,7 @@ class _FocusStackHandler:
 
     def notify_unfocused(self, focus_box: "FocusBox") -> None:
         """
-        Make the given Box lose focus.
+        To be called when a focus box loses focus.
 
         Make the next highest FocusBox in the stack take focus, which will place that box
         higher in the stack.
@@ -82,7 +99,7 @@ class _FocusStackHandler:
         """
         for box in self._focus_stack:
             if box is not focus_box:
-                self.notify_focused(box)
+                box.take_focus()
                 break
 
 
@@ -97,23 +114,27 @@ class FocusBox(MouseBox):
     The focused target receives all events first.
     """
 
-    def __init__(self, rect: cocos.rect.Rect, focus_stack: _FocusStackHandler = None):
+    def __init__(
+        self, definition: BoxDefinition, focus_stack: _FocusStackHandler = None
+    ):
         """
         Create a new FocusBox.
 
         Registers this FocusBox with the focus stack handler.
 
-        :param rect: The area where this box will respond to mouse clicks to take focus.
+        :param definition: BoxDefinition defining the shape of the focus box.
         :param focus_stack: The focus stack to use. Defaults to the global singleton.
         """
         if focus_stack is None:
             focus_stack = FocusStackHandler
         self.focus_stack = focus_stack
 
-        definition = MouseBoxDefinition(on_press=self.on_click)
+        definition = MouseBoxDefinition(
+            width=definition.width, height=definition.height, on_press=self.on_click
+        )
         self._is_focused: bool = False
         self._original_z_value: int = 0
-        super(FocusBox, self).__init__(definition, rect)
+        super(FocusBox, self).__init__(definition)
 
     def on_enter(self):
         """
@@ -135,12 +156,12 @@ class FocusBox(MouseBox):
         self.focus_stack.unregister_focus_box(self)
 
     @property
-    def focused(self) -> bool:
+    def is_focused(self) -> bool:
         """True if this Box is currently focused."""
         return self._is_focused
 
-    @focused.setter
-    def focused(self, value: bool) -> None:
+    @is_focused.setter
+    def is_focused(self, value: bool) -> None:
         """Set whether this Box is focused or not."""
         if value:
             self.take_focus()
@@ -168,18 +189,22 @@ class FocusBox(MouseBox):
             return True
         return False
 
-    def lose_focus(self):
+    def lose_focus(self) -> bool:
         """
         Set this Box as not focused.
 
         Remove the parents, and all its childrens, event handlers from the event stack.
         This removes the extra handlers added when focus was gained, and leaves the original
         handlers in place.
+
+        :return: True if focus was lost. False if this node was not already focused.
         """
         if self._is_focused:
             self._is_focused = False
             self.parent.set_z_value(self._original_z_value)
             self.focus_stack.notify_unfocused(self)
+            return True
+        return False
 
     def on_click(
         self, box: "MouseBox", x: int, y: int, buttons: int, modifiers: int
@@ -201,17 +226,19 @@ class FocusBox(MouseBox):
         return False
 
 
-def make_focusable(box: Box) -> None:
+def make_focusable(box: Box) -> FocusBox:
     """
     Make the given Box focusable.
 
     This adds a FocusBox of the same size as the given Box to the Box.
 
     :param box: Box to make focusable.
+    :return: Returns the FocusBox that was created.
     """
-    focus_box = FocusBox(box.rect)
+    focus_box = FocusBox(box.definition)
     # Add the focus box as the last child so that its event handlers get pushed first.
     # Use z=10000 as this should be high enough to make sure that the FocusBox is always the first
     # child without having to keep moving it up the stack if another child with a higher z value
     # is added.
     box.add(focus_box, z=10000)
+    return focus_box

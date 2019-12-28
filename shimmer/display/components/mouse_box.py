@@ -3,14 +3,13 @@
 import cocos
 import logging
 
-
 from dataclasses import dataclass
 from typing import Optional, Protocol
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
 from shimmer.display.helpers import bitwise_add, bitwise_remove, bitwise_contains
 from shimmer.display.primitives import Point2d
-from shimmer.display.components.box import ActiveBox
+from shimmer.display.components.box import ActiveBox, BoxDefinition
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ class MouseDragEventCallable(Protocol):
 
 
 @dataclass(frozen=True)
-class MouseBoxDefinition:
+class MouseBoxDefinition(BoxDefinition):
     """
     Definition of an invisible Box that can be clicked and hovered over.
 
@@ -122,16 +121,15 @@ class MouseVoidBoxDefinition(MouseBoxDefinition):
 class MouseBox(ActiveBox):
     """A box that reacts to mouse events."""
 
-    def __init__(
-        self, definition: MouseBoxDefinition, rect: Optional[cocos.rect.Rect] = None,
-    ):
+    definition_type = MouseBoxDefinition
+
+    def __init__(self, definition: MouseBoxDefinition):
         """
         Creates a new MouseBox.
 
         :param definition: Definition of the actions to take.
-        :param rect: Rectangular area that the Box will consider mouses events from.
         """
-        super(MouseBox, self).__init__(rect)
+        super(MouseBox, self).__init__(definition)
         self.definition: MouseBoxDefinition = definition
 
         # Whether the mouse is currently hovered over the Box or not.
@@ -379,3 +377,11 @@ class MouseBox(ActiveBox):
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
         result = self._on_drag(*coord, dx, dy, buttons, modifiers)
         return EVENT_HANDLED if result in [True, None] else EVENT_UNHANDLED
+
+    def start_dragging(self, *_, **__):
+        """Callback to start dragging this Box."""
+        self._currently_dragging = True
+
+    def stop_dragging(self, *_, **__):
+        """Callback to stop dragging this Box."""
+        self._currently_dragging = False

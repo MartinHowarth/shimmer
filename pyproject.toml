@@ -29,3 +29,8 @@ pydocstyle = "^5.0.1"
 mypy = "^0.750"
 pytest = "^5.3.1"
 pytest-subtests = "^0.2.1"
+mock = "^3.0.5"
+pytest-mock = "^1.13.0"
+
+[tool.pytest]
+mock_use_standalone_module = true

@@ -13,7 +13,7 @@ from ..data_structures import (
     VerticalTextAlignment,
     HorizontalAlignment,
 )
-from ..components.box import Box
+from ..components.box import Box, BoxDefinition
 from ..components.draggable_anchor import DraggableAnchor
 from ..components.focus import make_focusable
 from ..components.mouse_box import (
@@ -21,6 +21,7 @@ from ..components.mouse_box import (
     MouseClickEventCallable,
     MouseVoidBoxDefinition,
 )
+from shimmer.display.widgets.button import Button
 from shimmer.display.widgets.close_button import (
     CloseButton,
     CloseButtonDefinitionBase,
@@ -39,8 +40,9 @@ class WindowDefinition(MouseVoidBoxDefinition):
     """
 
     width: int = 200
-    # Height does not include the title bar, i.e. this is the height of the window body.
-    height: int = 180
+
+    # Height will be increased after creation by the title_bar_height.
+    height: int = 200
 
     title: Optional[str] = None
 
@@ -85,16 +87,15 @@ class Window(MouseBox):
         :param definition: Definition of the Window style.
         """
         self.definition: WindowDefinition = definition
-        # Create the title first so we can determine dynamically set title bar height.
+        # Create the title before super so we can determine dynamically set title bar height.
         self._title: Optional[cocos.text.Label] = None
         self._create_title()
-        # Set the rect of this window to include the title bar.
-        super(Window, self).__init__(
-            definition,
-            cocos.rect.Rect(
-                0, 0, definition.width, definition.height + self.title_bar_height
-            ),
+        definition = replace(
+            self.definition, height=self.definition.height + self.title_bar_height
         )
+
+        super(Window, self).__init__(definition)
+
         self.title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[cocos.layer.ColorLayer] = None
         self._update_title()  # Re-update title to make sure it's laid out correctly.
@@ -105,7 +106,12 @@ class Window(MouseBox):
         make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
-        self.inner_box: Box = Box(self._inner_box_rect)
+        self.inner_box: Box = Box(
+            BoxDefinition(
+                width=self.definition.width,
+                height=self.definition.height - self.title_bar_height,
+            )
+        )
         self.add(self.inner_box)
 
     @property
@@ -125,13 +131,6 @@ class Window(MouseBox):
         )
 
     @property
-    def _inner_box_rect(self) -> cocos.rect.Rect:
-        """Rect defining the window excluding the title bar."""
-        return cocos.rect.Rect(
-            0, 0, self.rect.width, self.rect.height - self.title_bar_height
-        )
-
-    @property
     def _title_bar_button_height(self):
         """Height of the title bar buttons, accounting for spacing."""
         return self.title_bar_height - (2 * self.definition.title_bar_button_spacing)
@@ -143,7 +142,7 @@ class Window(MouseBox):
             [
                 self.rect.width - box.x
                 for box in self.title_boxes.values()
-                if isinstance(box, MouseBox)
+                if isinstance(box, Button)
             ]
         )
 
@@ -164,6 +163,9 @@ class Window(MouseBox):
             edge_length,
         )
 
+    def recreate(self) -> None:
+        """Recreate all components of this window."""
+
     def _create_title(self):
         """Create the title node. Does not add it to the window."""
         if self.definition.title is None:
@@ -181,7 +183,7 @@ class Window(MouseBox):
         self._title = cocos.text.Label(**title_definition.to_pyglet_label_kwargs())
         self._title.position = (
             10,
-            self.definition.height + (self.title_bar_height / 2),
+            self.definition.height - (self.title_bar_height / 2),
         )
 
     def _update_title(self):
@@ -234,7 +236,7 @@ class Window(MouseBox):
             on_release=self.definition.on_close,
         )
         close_button = CloseButton(definition)
-        close_button.rect = close_button_rect
+        close_button.position = close_button_rect.position
         self._update_title_bar_box("close", close_button)
 
     def _update_drag_zone(self):
@@ -244,14 +246,12 @@ class Window(MouseBox):
         This creates a draggable area of the window covering the entire title bar to the left of
         the leftmost title bar button.
         """
-        drag_anchor_rect = cocos.rect.Rect(
-            0,
-            self.rect.height - self.title_bar_height,
-            self.rect.width - self._leftmost_title_bar_button_position,
-            self.title_bar_height,
+        drag_anchor_definition = BoxDefinition(
+            width=self.rect.width - self._leftmost_title_bar_button_position,
+            height=self.title_bar_height,
         )
-
-        self._update_title_bar_box("drag", DraggableAnchor(drag_anchor_rect))
+        self._update_title_bar_box("drag", DraggableAnchor(drag_anchor_definition))
+        self.title_boxes["drag"].position = 0, self.rect.height - self.title_bar_height
 
     def _update_title_bar_box(self, name: str, box: Box) -> None:
         """

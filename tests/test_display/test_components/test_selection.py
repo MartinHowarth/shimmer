@@ -1,7 +1,5 @@
 """Test the selection system components."""
 
-import cocos
-
 from typing import Callable, Optional
 
 from shimmer.display.primitives import create_color_rect
@@ -27,13 +25,15 @@ def make_dummy_selection_point(x: int, y: int) -> SelectableBox:
 
     box = SelectableBox(
         SelectableBoxDefinition(
+            width=30,
+            height=30,
             on_highlight=change_color(Color(200, 200, 0)),
             on_unhighlight=change_color(PassiveBlue),
             on_select=change_color(ActiveGreen),
             on_deselect=change_color(PassiveBlue),
-        ),
-        cocos.rect.Rect(x, y, 30, 30),
+        )
     )
+    box.position = x, y
     box.add(color_layer)
     return box
 

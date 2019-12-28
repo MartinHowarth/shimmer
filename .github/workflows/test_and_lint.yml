@@ -23,7 +23,7 @@ jobs:
           poetry run black --check shimmer tests
 
   flake8:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v1
@@ -41,7 +41,7 @@ jobs:
           poetry run flake8 --count --max-line-length=127 --statistics shimmer tests
 
   mypy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v1
@@ -59,7 +59,7 @@ jobs:
           poetry run mypy shimmer tests
 
   pydocstyle:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v1
@@ -76,9 +76,10 @@ jobs:
       - run: |
           poetry run pydocstyle shimmer tests
 
-  pytest:
+  # Run on windows because it has GL available.
+  pytest-windows:
     runs-on: windows-latest
-    
+
     steps:
       - uses: actions/checkout@v1
       - name: Set up Python 3.8
@@ -92,4 +93,6 @@ jobs:
           poetry install
 
       - run: |
-          poetry run pytest tests --ignore=tests/test_display
+          poetry run pytest tests
+        env:
+          SKIP_GUI_TESTS: 1

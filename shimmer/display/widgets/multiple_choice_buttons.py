@@ -11,7 +11,7 @@ from dataclasses import dataclass, field, replace
 
 from typing import Set, Optional, Union, Dict, Any
 
-from ..components.box import Box
+from ..components.box import Box, BoxDefinition
 from ..components.box_layout import (
     BoxColumn,
     BoxRow,
@@ -25,10 +25,12 @@ from .question_definition import MultipleChoiceQuestionDefinition
 
 
 @dataclass(frozen=True)
-class MultipleChoiceButtonsDefinition:
+class MultipleChoiceButtonsDefinition(BoxDefinition):
     """Definition of a set of multiple choice buttons."""
 
-    question: MultipleChoiceQuestionDefinition
+    question: MultipleChoiceQuestionDefinition = MultipleChoiceQuestionDefinition(
+        text=""
+    )
 
     # The style of the buttons to display. The text field will be ignored.
     button: ButtonDefinition = field(default_factory=ButtonDefinition)
@@ -42,7 +44,7 @@ class MultipleChoiceButtons(Box):
 
     def __init__(self, definition: MultipleChoiceButtonsDefinition):
         """Create a MultipleChoiceButtons."""
-        super(MultipleChoiceButtons, self).__init__()
+        super(MultipleChoiceButtons, self).__init__(definition)
         self.definition: MultipleChoiceButtonsDefinition = definition
         self._layout: Optional[Union[BoxRow, BoxColumn]] = None
         self._buttons: Dict[str, ToggleButton] = {}

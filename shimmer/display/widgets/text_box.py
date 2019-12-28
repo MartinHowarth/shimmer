@@ -5,7 +5,7 @@ import cocos
 from dataclasses import dataclass, replace
 from typing import Optional
 
-from ..components.box import Box
+from ..components.box import Box, BoxDefinition
 from ..data_structures import (
     Color,
     LabelDefinition,
@@ -13,10 +13,10 @@ from ..data_structures import (
 
 
 @dataclass(frozen=True)
-class TextBoxDefinition:
+class TextBoxDefinition(BoxDefinition):
     """Definition of a text box."""
 
-    label: LabelDefinition
+    label: LabelDefinition = LabelDefinition(text="")
     background_color: Color = Color(40, 40, 40)
 
 
@@ -29,7 +29,6 @@ class TextBox(Box):
         self.definition: TextBoxDefinition = definition
         self._label: Optional[cocos.text.Label] = None
         self._update_label()
-        self.background_color = self.definition.background_color
 
     @property
     def text(self) -> str:
@@ -54,6 +53,8 @@ class TextBox(Box):
 
         self._label = cocos.text.Label(**self.definition.label.to_pyglet_label_kwargs())
         self.add(self._label)
+        # Use "or 1" to avoid cocos default of 0 meaning entire window.
         self.set_size(
-            self._label.element.content_width, self._label.element.content_height
+            self._label.element.content_width or 1,
+            self._label.element.content_height or 1,
         )

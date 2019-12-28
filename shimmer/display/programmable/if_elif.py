@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import cast, Optional, List
 
-from shimmer.display.components.box import Box
+from shimmer.display.components.box import Box, BoxDefinition
 from shimmer.display.components.box_layout import BoxColumn
 from shimmer.display.programmable.instruction import (
     InstructionDisplay,
@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class InstructionWithBlockDisplayDefinition:
+class InstructionWithBlockDisplayDefinition(BoxDefinition):
     """Definition of how to display an instruction with an associated CodeBlock."""
 
     # Definition of the main If statement display

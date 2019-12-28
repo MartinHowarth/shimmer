@@ -6,26 +6,42 @@ A Box is a CocosNode that defines an area.
 
 import cocos
 
-from typing import Optional, Union
+from dataclasses import dataclass, replace
+from typing import Optional, Union, Type, Iterable
+
 from ..data_structures import Color, HorizontalAlignment, VerticalAlignment, ZIndexEnum
 from ..primitives import create_color_rect
+
+
+@dataclass(frozen=True)
+class BoxDefinition:
+    """Common definition to all Boxes."""
+
+    width: int = 0
+    height: int = 0
+
+    background_color: Optional[Color] = None
+
+    def as_rect(self) -> cocos.rect.Rect:
+        """Return a Rect of the size defined by this BoxDefinition."""
+        return cocos.rect.Rect(0, 0, self.width, self.height)
 
 
 class Box(cocos.cocosnode.CocosNode):
     """A CocosNode that has a defined rectangular area."""
 
-    def __init__(self, rect: Optional[cocos.rect.Rect] = None):
-        """
-        Creates a new Box.
+    definition_type: Type[BoxDefinition] = BoxDefinition
 
-        :param rect: Definition of the rectangle that this Box encompasses.
-        """
+    def __init__(self, definition: Optional[BoxDefinition] = None):
+        """Creates a new Box."""
         super(Box, self).__init__()
-        # And init the rect to a minimal size to guarantee existence.
-        self._rect = rect if rect is not None else cocos.rect.Rect(0, 0, 0, 0)
-        self._background_color: Optional[Color] = None
+        if definition is None:
+            definition = self.definition_type()
+
+        self.definition = definition
+        self._rect = self.definition.as_rect()
         self._background: Optional[cocos.layer.ColorLayer] = None
-        self._update_rect(self._rect)
+        self._update_background()
 
     def contains_coord(self, x: int, y: int) -> bool:
         """Returns whether the point (x,y) is inside the box."""
@@ -62,9 +78,8 @@ class Box(cocos.cocosnode.CocosNode):
     def _update_rect(self, rect: cocos.rect.Rect) -> None:
         """Update the position and size of this Box to the given rect."""
         self.position = rect.x, rect.y
-        rect.x = 0
-        rect.y = 0
-        self._rect = rect
+        self.definition = replace(self.definition, width=rect.width, height=rect.height)
+        self._rect = self.definition.as_rect()
 
     def set_size(self, width: int, height: int) -> None:
         """Update the size of this Box without changing position."""
@@ -77,6 +92,9 @@ class Box(cocos.cocosnode.CocosNode):
 
         Raises ValueError if this child is not a child of parent (should never happen).
         """
+        if self.parent is None:
+            raise AttributeError(f"{self} has no parent.")
+
         for z, child in self.parent.children:
             if child is self:
                 return z
@@ -105,11 +123,16 @@ class Box(cocos.cocosnode.CocosNode):
         if z is ZIndexEnum.top:
             # Children are in z order from lowest to highest, so highest z is the last one.
             # Children are stored as the tuple (z, node)
-            print(self.parent.children)
+            if self.parent.children[-1][1] is self:
+                # If this box is already at the top, then do nothing.
+                return
             z = self.parent.children[-1][0] + 1
         elif z is ZIndexEnum.bottom:
             # Children are in z order from lowest to highest, so lowest z is the first one.
             # Children are stored as the tuple (z, node)
+            if self.parent.children[0][1] is self:
+                # If this box is already at the top, then do nothing.
+                return
             z = self.parent.children[0][0] - 1
 
         # Remove and re-add to insert this node in the child list correctly, and perform
@@ -117,17 +140,6 @@ class Box(cocos.cocosnode.CocosNode):
         # event stack.
         self.parent.remove(self)
         self.parent.add(self, z=z)
-
-    @property
-    def background_color(self) -> Optional[Color]:
-        """Get the background color of this Box."""
-        return self._background_color
-
-    @background_color.setter
-    def background_color(self, value: Optional[Color]) -> None:
-        """Set the background color of this Box."""
-        self._background_color = value
-        self._update_background()
 
     def _update_background(self):
         """Set the background color of this Box."""
@@ -137,11 +149,13 @@ class Box(cocos.cocosnode.CocosNode):
 
         # Don't create a new background if the color is None
         # (this allows removal of the background color)
-        if self._background_color is None:
+        if self.definition.background_color is None:
             return
 
         self._background = create_color_rect(
-            self.rect.width, self.rect.height, self._background_color,
+            self.definition.width,
+            self.definition.height,
+            self.definition.background_color,
         )
         self._background.position = (0, 0)
         self.add(self._background, z=-1)
@@ -224,6 +238,11 @@ class Box(cocos.cocosnode.CocosNode):
         elif align_y == VerticalAlignment.top:
             self.y = other.rect.height - self.rect.height
 
+    def bounding_rect_of_children(self) -> cocos.rect.Rect:
+        """Return the rect that contains all the children Boxes of this Box."""
+        box_children = filter(lambda child: isinstance(child, Box), self.children)
+        return bounding_rect_of_boxes(box_children)
+
 
 class ActiveBox(Box):
     """A Box that adds itself to the cocos director event handlers when entering the scene."""
@@ -241,3 +260,30 @@ class ActiveBox(Box):
         """Called every time just before the node exits the stage."""
         cocos.director.director.window.remove_handlers(self)
         super(ActiveBox, self).on_exit()
+
+
+def bounding_rect_of_boxes(boxes: Iterable[Box]) -> cocos.rect.Rect:
+    """
+    Return the minimal rect needed to cover all the given boxes.
+
+    This is calculated in the coordinate space of the parent of the boxes.
+    If the boxes do not share a common parent then the resulting rect may be odd.
+    """
+    lefts, rights, tops, bottoms = zip(
+        *(
+            (box.x, box.x + box.definition.width, box.y + box.definition.height, box.y)
+            for box in boxes
+        )
+    )
+
+    left = min(lefts)
+    bottom = min(bottoms)
+    right = max(rights)
+    top = max(tops)
+
+    x = min(left, right)
+    y = min(bottom, top)
+    width = max(left, right) - x
+    height = max(bottom, top) - y
+
+    return cocos.rect.Rect(x, y, width, height)

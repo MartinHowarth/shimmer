@@ -1,28 +1,34 @@
 """Definition of a Box that tracks the cursor."""
 
-from typing import Optional
-
 import cocos
 
-from shimmer.display.components.box import ActiveBox
+from dataclasses import dataclass
+from typing import Optional
+
+from shimmer.display.components.box import ActiveBox, BoxDefinition
 from shimmer.display.primitives import Point2d
+
+
+@dataclass(frozen=True)
+class BoxTrackCursorDefinition(BoxDefinition):
+    """
+    Definition of a Box that tracks the cursor.
+
+    :param offset: (x, y) offset from the cursor position to set the Box position to.
+    """
+
+    offset: Point2d = (0, 0)
 
 
 class BoxTrackCursor(ActiveBox):
     """A Box that tracks the cursor."""
 
-    def __init__(self, rect: cocos.rect.Rect, offset: Optional[Point2d] = None):
-        """
-        Create a BoxTrackCursor.
+    definition_type = BoxTrackCursorDefinition
 
-        :param rect: Rect area of the Box.
-        :param offset: x, y offset from the cursor to the bottom-left corner of the pop up.
-        """
-        self._original_pos = rect.x, rect.y
-        super(BoxTrackCursor, self).__init__(rect)
-        if offset is None:
-            offset = 0, 0
-        self.offset = offset
+    def __init__(self, definition: Optional[BoxTrackCursorDefinition] = None):
+        """Create a BoxTrackCursor."""
+        super(BoxTrackCursor, self).__init__(definition)
+        self.definition: BoxTrackCursorDefinition = self.definition
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> None:
         """
@@ -35,4 +41,4 @@ class BoxTrackCursor(ActiveBox):
         coord = cocos.director.director.get_virtual_coordinates(x, y)
         # Position is relative to the parent, so need the mouse coordinates translated into the
         # local space of the parent to determine the correct relative position of this Box.
-        self.position = self.parent.point_to_local(coord) + self.offset
+        self.position = self.parent.point_to_local(coord) + self.definition.offset

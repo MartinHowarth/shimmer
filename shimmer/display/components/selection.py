@@ -16,7 +16,7 @@ from dataclasses import dataclass, replace
 from typing import Optional, Set, cast, Callable
 
 from shimmer.display.helpers import bitwise_contains
-from .box import Box
+from .box import Box, BoxDefinition
 from .drawing import RectDrawingBoxDefinition, RectDrawingBox, MouseDefinedRect
 from ..inspections import get_all_nodes_of_type, get_boxes_that_intersect_with_rect
 
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class SelectableBoxDefinition:
+class SelectableBoxDefinition(BoxDefinition):
     """
     Definition of a box that is selectable.
 
@@ -70,16 +70,14 @@ class SelectableBox(Box):
     See SelectionDrawingBox to define the area in which boxes can be selected using the mouse.
     """
 
-    def __init__(self, definition: SelectableBoxDefinition, rect: cocos.rect.Rect):
+    def __init__(self, definition: SelectableBoxDefinition):
         """
         Create a new SelectableBox.
 
         :param definition: Definition of the actions to take when this Box is interacted with.
-        :param rect: The rect defining the area that can be used to select this Box.
-            Selection handlers will use this rect to determine overlap with the selection area.
         """
-        super(SelectableBox, self).__init__(rect)
-        self.definition = definition
+        super(SelectableBox, self).__init__(definition)
+        self.definition: SelectableBoxDefinition = definition
         self._selected: bool = False
         self._highlighted: bool = False
 

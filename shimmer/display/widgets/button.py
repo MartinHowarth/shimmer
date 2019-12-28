@@ -27,9 +27,8 @@ class ButtonDefinition(MouseBoxDefinition):
     depressed_color: Optional[Color] = MutedBlue
     hover_color: Optional[Color] = ActiveBlue
 
-    # If width or height are None then that dimension will automatically match the text size.
-    width: Optional[int] = None
-    height: Optional[int] = None
+    # Automatically match the button size to the text size.
+    dynamic_size: bool = True
 
 
 class Button(MouseBox):
@@ -51,6 +50,7 @@ class Button(MouseBox):
         self.label: Optional[cocos.text.Label] = None
         self.color_rect: cocos.layer.ColorLayer = None
         self.update_label()
+        self.update_color_layer()
 
     @property
     def rect(self) -> cocos.rect.Rect:
@@ -82,10 +82,11 @@ class Button(MouseBox):
             anchor_y="center",
         )
         # Set size dynamically if either defined width or height are None.
-        new_width = self.definition.width or self.label.element.content_width
-        new_height = self.definition.height or self.label.element.content_height
-        self.set_size(new_width, new_height)
-        self.update_color_layer()
+        if self.definition.dynamic_size:
+            new_width = self.label.element.content_width
+            new_height = self.label.element.content_height
+            self.set_size(new_width, new_height)
+            self.update_color_layer()
 
         self.label.position = self.rect.width / 2, self.rect.height / 2
         self.add(self.label)

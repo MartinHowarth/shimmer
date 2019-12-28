@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, cast
 
+from shimmer.display.components.box import BoxDefinition
 from shimmer.display.components.box_layout import BoxColumn
 from shimmer.display.programmable.instruction import (
     InstructionDisplay,
@@ -16,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class CodeBlockDisplayDefinition:
+class CodeBlockDisplayDefinition(BoxDefinition):
     """Definition of how to display a CodeBlock."""
 
     instruction_definition: InstructionDisplayDefinition = field(
