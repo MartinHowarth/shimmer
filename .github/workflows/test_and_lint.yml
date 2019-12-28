@@ -20,7 +20,7 @@ jobs:
           poetry install
 
       - run: |
-          poetry run black --check shimmer tests
+          poetry run black --check shimmer tests examples
 
   flake8:
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
           poetry install
 
       - run: |
-          poetry run flake8 --count --max-line-length=127 --statistics shimmer tests
+          poetry run flake8 --count --max-line-length=127 --statistics shimmer tests examples
 
   mypy:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
           poetry install
 
       - run: |
-          poetry run mypy shimmer tests
+          poetry run mypy shimmer tests examples
 
   pydocstyle:
     runs-on: ubuntu-latest
@@ -74,7 +74,7 @@ jobs:
           poetry install
 
       - run: |
-          poetry run pydocstyle shimmer tests
+          poetry run pydocstyle shimmer tests examples
 
   # Run on windows because it has GL available.
   pytest-windows:

@@ -28,7 +28,7 @@ class ButtonDefinition(MouseBoxDefinition):
     hover_color: Optional[Color] = ActiveBlue
 
     # Automatically match the button size to the text size.
-    dynamic_size: bool = True
+    dynamic_size: bool = False
 
 
 class Button(MouseBox):

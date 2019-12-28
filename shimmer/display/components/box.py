@@ -7,7 +7,7 @@ A Box is a CocosNode that defines an area.
 import cocos
 
 from dataclasses import dataclass, replace
-from typing import Optional, Union, Type, Iterable
+from typing import Optional, Union, Type, Iterable, Generator
 
 from ..data_structures import Color, HorizontalAlignment, VerticalAlignment, ZIndexEnum
 from ..primitives import create_color_rect
@@ -238,10 +238,24 @@ class Box(cocos.cocosnode.CocosNode):
         elif align_y == VerticalAlignment.top:
             self.y = other.rect.height - self.rect.height
 
+    def get_family_tree(self) -> Generator["Box", None, None]:
+        """
+        Generate all children, grandchildren (etc) of this Box that are also Boxes.
+
+        Also yields this Box.
+        """
+        yield self
+        for child in self.get_children():
+            if isinstance(child, Box):
+                yield from child.get_family_tree()
+
     def bounding_rect_of_children(self) -> cocos.rect.Rect:
-        """Return the rect that contains all the children Boxes of this Box."""
-        box_children = filter(lambda child: isinstance(child, Box), self.children)
-        return bounding_rect_of_boxes(box_children)
+        """
+        Return the rect that contains all the children Boxes of this Box.
+
+        This recursively finds all children of this boxes children as well.
+        """
+        return bounding_rect_of_boxes(self.get_family_tree())
 
 
 class ActiveBox(Box):

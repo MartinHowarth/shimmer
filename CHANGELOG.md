@@ -13,5 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add basis for a mouse drawing system
 - Add selectable boxes
 - Add drag-to-select system
+- Add calculator example.
 
 [Unreleased]: https://github.com/MartinHowarth/shimmer/compare/master...HEAD

@@ -271,6 +271,8 @@ class Window(MouseBox):
         child: Box,
         align_x: HorizontalAlignment = HorizontalAlignment.center,
         align_y: VerticalAlignment = VerticalAlignment.center,
+        margin_x: int = 0,
+        margin_y: int = 0,
     ) -> None:
         """
         Add a child to the body of the window aligned to the edges or center of the window.
@@ -289,6 +291,20 @@ class Window(MouseBox):
         :param child: The child Box to add.
         :param align_x: X alignment of the child.
         :param align_y: Y alignment of the child.
+        :param margin_x: Space to leave between edge of window and the box.
+            Has no effect for "center" alignment.
+        :param margin_y: Space to leave between edge of window and the box.
+            Has no effect for "center" alignment.
         """
         child.set_position_in_alignment_with(self.inner_box, align_x, align_y)
+        if margin_x:
+            if align_x == HorizontalAlignment.left:
+                child.x += margin_x
+            elif align_x == HorizontalAlignment.right:
+                child.x -= margin_x
+        if margin_y:
+            if align_y == VerticalAlignment.bottom:
+                child.y += margin_y
+            elif align_y == VerticalAlignment.top:
+                child.y -= margin_y
         self.inner_box.add(child)

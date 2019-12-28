@@ -116,10 +116,11 @@ class BoxRow(BoxLayout):
         for box in self._boxes:
             box.x = x_total
             x_total += box.rect.width + self._spacing
-        self.rect.height = max([box.rect.height for box in self._boxes])
-        self.rect.width = sum(
-            (box.rect.width for box in self._boxes)
-        ) + self._spacing * (len(self._boxes) - 1)
+        height = max([box.rect.height for box in self._boxes])
+        width = sum((box.rect.width for box in self._boxes)) + self._spacing * (
+            len(self._boxes) - 1
+        )
+        self.set_size(width, height)
 
 
 class BoxColumn(BoxLayout):
@@ -135,10 +136,11 @@ class BoxColumn(BoxLayout):
         for box in self._boxes:
             box.y = y_total
             y_total += box.rect.height + self._spacing
-        self.rect.width = max([box.rect.width for box in self._boxes])
-        self.rect.height = sum(
-            (box.rect.height for box in self._boxes)
-        ) + self._spacing * (len(self._boxes) - 1)
+        width = max([box.rect.width for box in self._boxes])
+        height = sum((box.rect.height for box in self._boxes)) + self._spacing * (
+            len(self._boxes) - 1
+        )
+        self.set_size(width, height)
 
 
 def build_rectangular_grid(

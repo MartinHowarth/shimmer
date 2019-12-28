@@ -64,8 +64,7 @@ def test_button_dynamic_size(run_gui, button_definition):
         on_release=change_text_callback("on_release"),
         on_hover=change_text_callback("on_hover"),
         on_unhover=change_text_callback("on_unhover"),
-        width=None,
-        height=None,
+        dynamic_size=True,
     )
     layer = Button(defn)
 
