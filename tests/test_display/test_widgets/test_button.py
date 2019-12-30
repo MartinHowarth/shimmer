@@ -117,3 +117,39 @@ def test_toggle_button_no_gui(subtests, mock_gui, mock_mouse):
         button.definition.on_release.assert_not_called()
         button.definition.on_press.assert_called_once()
         assert button.is_toggled is True
+
+
+def test_button_definition_formatted_text(subtests):
+    """Test that the keyboard shortcut is underlined correctly."""
+    with subtests.test("No change to formatting if no keyboard shortcut given."):
+        definition = ButtonDefinition(text="Hello, world!")
+        assert definition.formatted_text == "Hello, world!"
+
+    with subtests.test("No change to formatting if text is single letter."):
+        definition = ButtonDefinition(text="H", keyboard_shortcut="H")
+        assert definition.formatted_text == "H"
+
+    with subtests.test("No change to formatting if shortcut not in text."):
+        definition = ButtonDefinition(text="Hello, world!", keyboard_shortcut="Z")
+        assert definition.formatted_text == "Hello, world!"
+
+    with subtests.test("First letter can be underlined."):
+        definition = ButtonDefinition(text="Hello, world!", keyboard_shortcut="H")
+        assert (
+            definition.formatted_text
+            == "{underline (255, 255, 255, 255)}H{underline False}ello, world!"
+        )
+
+    with subtests.test("Last letter can be underlined."):
+        definition = ButtonDefinition(text="Hello, world!", keyboard_shortcut="!")
+        assert (
+            definition.formatted_text
+            == "Hello, world{underline (255, 255, 255, 255)}!{underline False}"
+        )
+
+    with subtests.test("A middle letter can be underlined."):
+        definition = ButtonDefinition(text="Hello, world!", keyboard_shortcut="o")
+        assert (
+            definition.formatted_text
+            == "Hell{underline (255, 255, 255, 255)}o{underline False}, world!"
+        )

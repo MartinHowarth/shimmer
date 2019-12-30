@@ -89,16 +89,20 @@ class KeyboardActionDefinition:
     Or it can be a single string character. This is useful when you want to distinguish
     between capital and lowercase letters without handling `MOD_SHIFT` yourself.
 
+    Note that for character (aka text) presses, on_press and on_release will be called
+    immediately - there is no "release" event for text.
+
+    Also note that text events may repeat rapidly if the user holds the key down.
+
     :param chords: List of ChordDefinitions or characters that can trigger the callbacks.
     :param on_press: Called when one of the chords is pressed, or a character is pressed.
-    :param on_release: Called when one of the chords is released.
-        Ignored if a character is pressed.
+    :param on_release: Called when one of the chords is released, or a character is pressed.
     """
 
     chords: List[Union[ChordDefinition, str]] = field(default_factory=list)
 
-    on_press: Optional[Callable[[], bool]] = None
-    on_release: Optional[Callable[[], bool]] = None
+    on_press: Optional[Callable[[], Optional[bool]]] = None
+    on_release: Optional[Callable[[], Optional[bool]]] = None
 
 
 @dataclass
@@ -253,6 +257,8 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
         for handler in modifier_map[text]:
             if handler.on_press is not None:
                 results.append(handler.on_press())
+            if handler.on_release is not None:
+                results.append(handler.on_release())
 
         if EVENT_HANDLED in results:
             return EVENT_HANDLED

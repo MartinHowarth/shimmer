@@ -253,7 +253,7 @@ def test_key_handler_on_release(subtests, mock_gui, mock_keyboard):
 
 
 @no_type_check  # Ignore typing because Mocks don't type nicely.
-def test_key_handler_with_text_action(mock_gui, mock_keyboard):
+def test_key_handler_with_text_action(subtests, mock_gui, mock_keyboard):
     """Test KeyboardAction definition with text rather than a Chord works correctly."""
     keyboard_action = KeyboardActionDefinition(
         chords=["a", "A"], on_press=MagicMock(), on_release=MagicMock()
@@ -262,15 +262,18 @@ def test_key_handler_with_text_action(mock_gui, mock_keyboard):
     keymap.add_keyboard_action(keyboard_action)
     handler = KeyboardHandler(keymap)
 
-    mock_keyboard.text(handler, "a")
-    keyboard_action.on_press.assert_called_once()
-    keyboard_action.on_release.assert_not_called()
+    with subtests.test("Test that the first text chord can trigger the action."):
+        mock_keyboard.text(handler, "a")
+        keyboard_action.on_press.assert_called_once()
+        keyboard_action.on_release.assert_called_once()
 
     keyboard_action.on_press.reset_mock()
+    keyboard_action.on_release.reset_mock()
 
-    mock_keyboard.text(handler, "A")
-    keyboard_action.on_press.assert_called_once()
-    keyboard_action.on_release.assert_not_called()
+    with subtests.test("Test that the second text chord can trigger the action."):
+        mock_keyboard.text(handler, "A")
+        keyboard_action.on_press.assert_called_once()
+        keyboard_action.on_release.assert_called_once()
 
 
 @no_type_check  # Ignore typing because Mocks don't type nicely.

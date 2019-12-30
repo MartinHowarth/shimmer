@@ -13,6 +13,11 @@ from shimmer.display.components.mouse_box import (
     MouseBoxDefinition,
     MouseBox,
 )
+from shimmer.display.keyboard import (
+    KeyboardActionDefinition,
+    KeyMap,
+    KeyboardHandler,
+)
 from shimmer.display.helpers import bitwise_contains
 from shimmer.display.data_structures import Color, PassiveBlue, ActiveBlue, MutedBlue
 from shimmer.display.primitives import create_color_rect
@@ -29,6 +34,38 @@ class ButtonDefinition(MouseBoxDefinition):
 
     # Automatically match the button size to the text size.
     dynamic_size: bool = False
+
+    keyboard_shortcut: Optional[str] = None
+
+    @property
+    def formatted_text(self) -> Optional[str]:
+        """
+        Get the formatted text for this Button.
+
+        When used in a RichLabel, underlines the keyboard shortcut if present in the text.
+        """
+        if (
+            self.text is not None
+            and self.keyboard_shortcut is not None
+            and self.keyboard_shortcut in self.text
+            and len(self.text) > 1
+        ):
+            # If the keyboard_shortcut appears in the text, and it's not the only character
+            # then underline it.
+            # This uses pyglets special in-built text formatting engine.
+            # https://pyglet.readthedocs.io/en/stable/programming_guide/text.html#attributed-text
+            index = self.text.index(self.keyboard_shortcut)
+            underline_color = (255, 255, 255, 255)
+            return "".join(
+                (
+                    self.text[:index],
+                    f"{{underline {underline_color}}}"
+                    f"{self.keyboard_shortcut}"
+                    f"{{underline False}}",
+                    self.text[index + 1 :],
+                )
+            )
+        return self.text
 
 
 class Button(MouseBox):
@@ -49,8 +86,10 @@ class Button(MouseBox):
         super(Button, self).__init__(definition)
         self.label: Optional[cocos.text.Label] = None
         self.color_rect: cocos.layer.ColorLayer = None
+        self.keyboard_handler: Optional[KeyboardHandler] = None
         self.update_label()
         self.update_color_layer()
+        self.update_keyboard_handler()
 
     @property
     def rect(self) -> cocos.rect.Rect:
@@ -73,8 +112,8 @@ class Button(MouseBox):
             self.label = None
             return
 
-        self.label = cocos.text.Label(
-            self.definition.text,
+        self.label = cocos.text.RichLabel(
+            self.definition.formatted_text,
             font_name="calibri",
             font_size=16,
             bold=True,
@@ -182,6 +221,31 @@ class Button(MouseBox):
     def on_keyboard_select_release(self) -> Optional[bool]:
         """Called when the keyboard is used to release this button."""
         return self._on_release(0, 0, 0, 0)
+
+    def update_keyboard_handler(self):
+        """
+        Recreate the keyboard handler for this Button.
+
+        Listens for keyboard presses for the configured keyboard_shortcut and
+        activates on_press and on_release for this button on each key press.
+        """
+        self.keyboard_handler = None
+
+        if self.definition.keyboard_shortcut is None:
+            return
+
+        keymap = KeyMap()
+        keyboard_action = KeyboardActionDefinition(
+            chords=[
+                self.definition.keyboard_shortcut.upper(),
+                self.definition.keyboard_shortcut.lower(),
+            ],
+            on_press=self.on_keyboard_select_press,
+            on_release=self.on_keyboard_select_release,
+        )
+        keymap.add_keyboard_action(keyboard_action)
+        self.keyboard_handler = KeyboardHandler(keymap)
+        self.add(self.keyboard_handler)
 
 
 class ToggleButton(Button):

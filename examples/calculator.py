@@ -2,7 +2,6 @@
 
 import cocos
 
-from itertools import chain
 from pyglet.window import key
 from typing import Optional, List, Callable
 
@@ -93,7 +92,13 @@ class Calculator(Window):
             return True
 
         return Button(
-            ButtonDefinition(text=symbol, on_press=callback, width=50, height=50)
+            ButtonDefinition(
+                text=symbol,
+                on_press=callback,
+                width=50,
+                height=50,
+                keyboard_shortcut=symbol,
+            )
         )
 
     def on_button_press(self, symbol: str) -> None:
@@ -123,9 +128,11 @@ class Calculator(Window):
 
     def create_keymap(self) -> KeyMap:
         """
-        Create the keymap for this calculator.
+        Create an additional keymap for this calculator.
 
-        Defines the mapping from keyboard events to calculator button presses.
+        Keyboard definitions on each button are already handled, this adds control
+        for extra keyboard presses that translate onto calculator events such
+        as ENTER instead of "=".
         """
 
         def on_key_press(symbol: str) -> Callable:
@@ -140,30 +147,17 @@ class Calculator(Window):
 
         keymap = KeyMap()
 
-        # For each symbol in the layout, add a KeyboardAction that presses the corresponding
-        # calculator button.
-        for symbol_str in chain(*self.symbol_layout):
-            keymap.add_keyboard_action(
-                KeyboardActionDefinition(
-                    chords=[symbol_str], on_press=on_key_press(symbol_str),
-                )
-            )
-
         # Make the ENTER keys also trigger equals.
         keymap.add_keyboard_action(
             KeyboardActionDefinition(
-                chords=[ChordDefinition(key.ENTER), ChordDefinition(key.NUM_ENTER),],
+                chords=[ChordDefinition(key.ENTER), ChordDefinition(key.NUM_ENTER)],
                 on_press=on_key_press("="),
             )
         )
         # Make the backspace and escape keys also trigger clear.
         keymap.add_keyboard_action(
             KeyboardActionDefinition(
-                chords=[
-                    "c",  # Add lowercase c here as well, as we've already added uppercase.
-                    ChordDefinition(key.BACKSPACE),
-                    ChordDefinition(key.ESCAPE),
-                ],
+                chords=[ChordDefinition(key.BACKSPACE), ChordDefinition(key.ESCAPE)],
                 on_press=on_key_press("C"),
             )
         )
