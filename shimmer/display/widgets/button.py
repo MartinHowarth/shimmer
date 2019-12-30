@@ -129,16 +129,19 @@ class Button(MouseBox):
             or self.definition.hover_color is not None
         )
 
-    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> Optional[bool]:
         """Change the button color and call the on_press callback."""
-        super(Button, self)._on_press(x, y, buttons, modifiers)
+        result = super(Button, self)._on_press(x, y, buttons, modifiers)
         if self.definition.depressed_color is not None:
             self.color_rect.color = self.definition.depressed_color.as_tuple()
             # self.color_rect.opacity = self.definition.depressed_color.a
+        return result
 
-    def _on_release(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+    def _on_release(
+        self, x: int, y: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
         """Change the button color and call the on_release callback."""
-        super(Button, self)._on_release(x, y, buttons, modifiers)
+        result = super(Button, self)._on_release(x, y, buttons, modifiers)
         if self._currently_hovered:
             if self.definition.hover_color is not None:
                 self.color_rect.color = self.definition.hover_color.as_tuple()
@@ -146,20 +149,39 @@ class Button(MouseBox):
         else:
             self.color_rect.color = self.definition.base_color.as_tuple()
             # self.color_rect.opacity = self.definition.base_color.a
+        return result
 
-    def _on_hover(self, x: int, y: int, dx: int, dy: int) -> None:
+    def _on_hover(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """Change the button color and call the on_hover callback."""
-        super(Button, self)._on_hover(x, y, dx, dy)
+        result = super(Button, self)._on_hover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.hover_color.as_tuple()
             # self.color_rect.opacity = self.definition.hover_color.a
+        return result
 
-    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> None:
+    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """Change the button color and call the on_unhover callback."""
-        super(Button, self)._on_unhover(x, y, dx, dy)
+        result = super(Button, self)._on_unhover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             self.color_rect.color = self.definition.base_color.as_tuple()
             # self.color_rect.opacity = self.definition.base_color.a
+        return result
+
+    def on_keyboard_hover(self) -> Optional[bool]:
+        """Called when the keyboard is used to navigate onto this button."""
+        return self._on_hover(0, 0, 0, 0)
+
+    def on_keyboard_unhover(self) -> Optional[bool]:
+        """Called when the keyboard is used to navigate off this button."""
+        return self._on_unhover(0, 0, 0, 0)
+
+    def on_keyboard_select_press(self) -> Optional[bool]:
+        """Called when the keyboard is used to press this button."""
+        return self._on_press(0, 0, 0, 0)
+
+    def on_keyboard_select_release(self) -> Optional[bool]:
+        """Called when the keyboard is used to release this button."""
+        return self._on_release(0, 0, 0, 0)
 
 
 class ToggleButton(Button):

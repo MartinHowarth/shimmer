@@ -2,8 +2,11 @@
 
 import cocos
 
-from typing import Optional, List
+from itertools import chain
+from pyglet.window import key
+from typing import Optional, List, Callable
 
+from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDefinition
 from shimmer.display.widgets.button import ButtonDefinition, Button
 from shimmer.display.widgets.window import WindowDefinition, Window
 from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
@@ -11,7 +14,12 @@ from shimmer.display.data_structures import (
     VerticalAlignment,
     HorizontalAlignment,
 )
-from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDefinition
+from shimmer.display.keyboard import (
+    KeyboardActionDefinition,
+    KeyMap,
+    KeyboardHandler,
+    ChordDefinition,
+)
 
 
 class Calculator(Window):
@@ -50,6 +58,10 @@ class Calculator(Window):
             height=layout_rect.height + self.text_box.rect.height + 2 * self.margin,
         )
         super(Calculator, self).__init__(definition)
+
+        # Create a keyboard handler and add it to this node so that it responds to keyboard events.
+        self.keyboard_handler = KeyboardHandler(self.create_keymap())
+        self.add(self.keyboard_handler)
 
         # Add the display and the buttons to the Window body with sensible alignment.
         self.add_child_to_body(
@@ -109,10 +121,88 @@ class Calculator(Window):
         """Update the calculator display."""
         self.text_box.text = self.calculation
 
+    def create_keymap(self) -> KeyMap:
+        """
+        Create the keymap for this calculator.
 
-if __name__ == "__main__":
-    cocos.director.director.init()
+        Defines the mapping from keyboard events to calculator button presses.
+        """
+
+        def on_key_press(symbol: str) -> Callable:
+            """Callback for handling keyboard events."""
+
+            def inner() -> bool:
+                self.on_button_press(symbol)
+                # Return True to mark the keyboard event as handled.
+                return True
+
+            return inner
+
+        keymap = KeyMap()
+
+        # For each symbol in the layout, add a KeyboardAction that presses the corresponding
+        # calculator button.
+        for symbol_str in chain(*self.symbol_layout):
+            keymap.add_keyboard_action(
+                KeyboardActionDefinition(
+                    chords=[symbol_str], on_press=on_key_press(symbol_str),
+                )
+            )
+
+        # Make the ENTER keys also trigger equals.
+        keymap.add_keyboard_action(
+            KeyboardActionDefinition(
+                chords=[ChordDefinition(key.ENTER), ChordDefinition(key.NUM_ENTER),],
+                on_press=on_key_press("="),
+            )
+        )
+        # Make the backspace and escape keys also trigger clear.
+        keymap.add_keyboard_action(
+            KeyboardActionDefinition(
+                chords=[
+                    "c",  # Add lowercase c here as well, as we've already added uppercase.
+                    ChordDefinition(key.BACKSPACE),
+                    ChordDefinition(key.ESCAPE),
+                ],
+                on_press=on_key_press("C"),
+            )
+        )
+        return keymap
+
+
+def create_new_calculator(*_, **__):
+    """Create a new calculator and add it to the current scene."""
+    # Create a new calculator
     calculator = Calculator()
     calculator.position = 100, 100
-    scene = cocos.scene.Scene(calculator)
+
+    # Add it to the current scene.
+    cocos.director.director.scene.add(calculator)
+
+    # Make the new calculator the currently focused window.
+    calculator.focus_box.take_focus()
+
+
+def main():
+    """Run the calculator program."""
+    cocos.director.director.init()
+    new_calculator_button = Button(
+        ButtonDefinition(
+            text="New Calculator", on_press=create_new_calculator, dynamic_size=True
+        )
+    )
+    new_calculator_button.position = (
+        0,
+        cocos.director.director.get_window_size()[1]
+        - new_calculator_button.rect.height,
+    )
+    calculator = Calculator()
+    calculator.position = 100, 100
+    calculator2 = Calculator()
+    calculator2.position = 200, 50
+    scene = cocos.scene.Scene(new_calculator_button, calculator, calculator2)
     cocos.director.director.run(scene)
+
+
+if __name__ == "__main__":
+    main()

@@ -141,7 +141,7 @@ docs = ["sphinx"]
 test = ["pytest", "pytest-cov"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "More routines for operating on iterables, beyond itertools"
 name = "more-itertools"
 optional = false
@@ -360,7 +360,7 @@ python-versions = "*"
 version = "0.1.7"
 
 [metadata]
-content-hash = "685888d9af747953b48e74182a6356bcd12d666e0e951bda6684e66b97bbb420"
+content-hash = "847665f17541b844233c1787c919ed52f175c2ab25429f53a22f7ef0375469de"
 python-versions = "^3.8"
 
 [metadata.files]

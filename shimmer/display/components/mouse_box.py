@@ -196,6 +196,8 @@ class MouseBox(ActiveBox):
         Calls the `on_hover` callback from the definition, passing information about the event to
         the callback.
         """
+        self._currently_hovered = True
+
         if self.definition.on_hover is None:
             return None
 
@@ -222,6 +224,7 @@ class MouseBox(ActiveBox):
         """
         # reset knowledge of which mouse buttons are pressed when mouse leaves the button.
         self._currently_pressed = 0
+        self._currently_hovered = False
 
         if self.definition.on_unhover is None:
             return None
@@ -347,7 +350,6 @@ class MouseBox(ActiveBox):
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
         if self.contains_coord(*coord):
             if not self._currently_hovered:
-                self._currently_hovered = True
                 result = self._on_hover(*coord, dx, dy)
 
             # If on_hover hasn't already handled the event, call on_motion.
@@ -357,7 +359,6 @@ class MouseBox(ActiveBox):
             # By default, do not return EVENT_HANDLED on hover as we could be
             # hovering over multiple things.
         elif self._currently_hovered:
-            self._currently_hovered = False
             result = self._on_unhover(*coord, dx, dy)
             # By default, do not return EVENT_HANDLED on unhover as we have left
             # the button area.

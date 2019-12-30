@@ -64,7 +64,6 @@ class Box(cocos.cocosnode.CocosNode):
         :param value: Rect to set this Box to.
         """
         self._update_rect(value)
-        self._update_background()
 
     @property
     def world_rect(self) -> cocos.rect.Rect:
@@ -80,11 +79,11 @@ class Box(cocos.cocosnode.CocosNode):
         self.position = rect.x, rect.y
         self.definition = replace(self.definition, width=rect.width, height=rect.height)
         self._rect = self.definition.as_rect()
+        self._update_background()
 
     def set_size(self, width: int, height: int) -> None:
         """Update the size of this Box without changing position."""
         self._update_rect(cocos.rect.Rect(*self.position, width, height))
-        self._update_background()
 
     def get_z_value(self) -> int:
         """

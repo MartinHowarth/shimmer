@@ -14,5 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add selectable boxes
 - Add drag-to-select system
 - Add calculator example.
+- Add keyboard handling system and make calculator example use it.
 
 [Unreleased]: https://github.com/MartinHowarth/shimmer/compare/master...HEAD

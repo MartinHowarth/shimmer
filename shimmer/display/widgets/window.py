@@ -103,7 +103,7 @@ class Window(MouseBox):
         self._update_background()
         self._update_close_button()
         self._update_drag_zone()
-        make_focusable(self)
+        self.focus_box = make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
         self.inner_box: Box = Box(
@@ -162,9 +162,6 @@ class Window(MouseBox):
             edge_length,
             edge_length,
         )
-
-    def recreate(self) -> None:
-        """Recreate all components of this window."""
 
     def _create_title(self):
         """Create the title node. Does not add it to the window."""
@@ -239,6 +236,11 @@ class Window(MouseBox):
         close_button.position = close_button_rect.position
         self._update_title_bar_box("close", close_button)
 
+    @property
+    def close_button(self) -> CloseButton:
+        """Get the close button of this window."""
+        return self.title_boxes["close"]
+
     def _update_drag_zone(self):
         """
         Redefine the draggable area of the title bar.
@@ -308,3 +310,7 @@ class Window(MouseBox):
             elif align_y == VerticalAlignment.top:
                 child.y -= margin_y
         self.inner_box.add(child)
+
+    def close(self):
+        """Close this window by simulating a click on the close button."""
+        self.close_button.on_keyboard_select_release()

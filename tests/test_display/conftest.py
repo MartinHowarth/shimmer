@@ -12,6 +12,7 @@ from shimmer.display.data_structures import LabelDefinition
 from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
 
 from .mock_gui import MockWindow, MockDirector
+from .mock_keyboard import MockKeyboard
 from .mock_mouse import MockMouse
 
 
@@ -155,5 +156,11 @@ def mock_gui(mocker):
 
 @pytest.fixture
 def mock_mouse():
-    """Fixture to provide a mock hardware mouse for test to simulate mouse events."""
+    """Fixture to provide a mock hardware mouse for tests to simulate mouse events."""
     return MockMouse()
+
+
+@pytest.fixture
+def mock_keyboard():
+    """Fixture to provide a mock hardware keyboard for tests to simulate keyboard events."""
+    return MockKeyboard()
