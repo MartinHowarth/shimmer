@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, asdict
 from enum import Enum
+from pyglet.font import load as load_font
 from typing import Tuple, Dict, Any, List, Optional
 
 
@@ -34,8 +35,8 @@ Grey = Color(130, 130, 170)
 DarkGrey = Color(100, 100, 150)
 
 
-@dataclass
-class Font:
+@dataclass(frozen=True)
+class FontDefinition:
     """Definition of a text Font. See `pyglet.text.Label` for full parameter decriptions."""
 
     font_name: str
@@ -52,9 +53,21 @@ class Font:
         _dict["color"] = self.color.as_tuple_alpha()
         return _dict
 
+    @property
+    def height(self) -> int:
+        """
+        Discover the height of this Font.
 
-Calibri = Font("calibri", 16)
-ComicSans = Font("comic sans", 16)
+        This is a relatively expensive call, so cache it if you need to use it often.
+        """
+        font = load_font(
+            self.font_name, self.font_size, self.bold, self.italic, self.dpi
+        )
+        return font.ascent - font.descent
+
+
+Calibri = FontDefinition("calibri", 16)
+ComicSans = FontDefinition("comic sans", 16)
 
 
 class HorizontalAlignment(Enum):
@@ -104,7 +117,7 @@ class LabelDefinition:
     """
 
     text: str
-    font: Font = Calibri
+    font: FontDefinition = Calibri
 
     # Maximum width of the text box. Text is wrapped to fit within this width.
     # Set to None to force single line text of arbitrary width.

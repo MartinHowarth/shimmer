@@ -83,9 +83,8 @@ def create_multiple_choice_question_dialog(
     margin_x, margin_y = 15, 15
     window_definition = WindowDefinition(
         title=definition.text,
-        title_bar_height=None,
         width=buttons.rect.width + 2 * margin_x,
-        height=buttons.rect.height + 2 * margin_y,
+        body_height=buttons.rect.height + 2 * margin_y,
         on_close=on_close,
     )
     window = Window(window_definition)

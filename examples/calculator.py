@@ -54,7 +54,9 @@ class Calculator(Window):
             title="Calculator",
             title_bar_height=None,
             width=layout_rect.width + 2 * self.margin,
-            height=layout_rect.height + self.text_box.rect.height + 2 * self.margin,
+            body_height=layout_rect.height
+            + self.text_box.rect.height
+            + 2 * self.margin,
         )
         super(Calculator, self).__init__(definition)
 

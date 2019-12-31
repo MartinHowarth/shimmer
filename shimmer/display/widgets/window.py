@@ -12,6 +12,8 @@ from ..data_structures import (
     VerticalAlignment,
     VerticalTextAlignment,
     HorizontalAlignment,
+    FontDefinition,
+    Calibri,
 )
 from ..components.box import Box, BoxDefinition
 from ..components.draggable_anchor import DraggableAnchor
@@ -37,18 +39,21 @@ class WindowDefinition(MouseVoidBoxDefinition):
     that happen within it. Other components can be added into the window that can receive
     those events first. This prevents users clicking on a window and something underneath
     the window receiving the event accidentally.
+
+    The `height` parameter is set on init to be the sum of the `body_height` and the
+    `title_bar_height`.
     """
 
     width: int = 200
 
-    # Height will be increased after creation by the title_bar_height.
-    height: int = 200
+    # Height of the window body, excluding the title bar.
+    body_height: int = 200
 
     title: Optional[str] = None
+    title_font_definition: FontDefinition = Calibri
 
-    # Height of the title bar. If None then it will match the height of the title.
-    # If None, then a title must be given.
-    title_bar_height: Optional[int] = 20
+    # Height of the title bar. If None then it will match the height of the title font.
+    title_bar_height: Optional[int] = None
 
     # Space to leave between buttons in the title bar
     title_bar_button_spacing: int = 2
@@ -58,12 +63,27 @@ class WindowDefinition(MouseVoidBoxDefinition):
     # Callback to call when the window is closed using the close button.
     on_close: Optional[MouseClickEventCallable] = None
 
+    def get_title_bar_height(self) -> int:
+        """
+        Height of the title bar.
+
+        This is the defined height `title_bar_height` if given,
+        otherwise the height of the title font.
+        """
+        if self.title_bar_height is not None:
+            return self.title_bar_height
+        return self.title_font_definition.height
+
     def __post_init__(self):
-        """Validation checks for inter-dependent fields."""
-        if self.title is None and self.title_bar_height is None:
-            raise ValueError(
-                "Cannot have both `title` and `title_bar_height` set to None."
-            )
+        """
+        Initialise the `height` of the window.
+
+        This sets height to the sum of the body and title bar heights.
+        """
+        # Have to use this __setattr__ workaround because the dataclass is frozen.
+        object.__setattr__(
+            self, "height", self.body_height + self.get_title_bar_height()
+        )
 
 
 class Window(MouseBox):
@@ -87,18 +107,14 @@ class Window(MouseBox):
         :param definition: Definition of the Window style.
         """
         self.definition: WindowDefinition = definition
-        # Create the title before super so we can determine dynamically set title bar height.
-        self._title: Optional[cocos.text.Label] = None
-        self._create_title()
-        definition = replace(
-            self.definition, height=self.definition.height + self.title_bar_height
-        )
+        self.title_bar_height = self.definition.get_title_bar_height()
 
         super(Window, self).__init__(definition)
 
+        self._title: Optional[cocos.text.Label] = None
         self.title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[cocos.layer.ColorLayer] = None
-        self._update_title()  # Re-update title to make sure it's laid out correctly.
+        self._update_title()
         self._update_title_bar_background()
         self._update_background()
         self._update_close_button()
@@ -108,27 +124,10 @@ class Window(MouseBox):
         # Add the inner box, which is the main body of the window excluding the title bar.
         self.inner_box: Box = Box(
             BoxDefinition(
-                width=self.definition.width,
-                height=self.definition.height - self.title_bar_height,
+                width=self.definition.width, height=self.definition.body_height,
             )
         )
         self.add(self.inner_box)
-
-    @property
-    def title_bar_height(self) -> int:
-        """
-        Height of the title bar.
-
-        This is the defined height `title_bar_height` if given,
-        otherwise the height of the title.
-        """
-        if self.definition.title_bar_height is not None:
-            return self.definition.title_bar_height
-        elif self._title is not None:
-            return self._title.element.content_height
-        raise ValueError(
-            "Title bar height is not known yet - initialise the window first."
-        )
 
     @property
     def _title_bar_button_height(self):
