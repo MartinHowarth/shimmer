@@ -1,0 +1,33 @@
+{
+  "branch": "master",
+  "tagFormat": "${version}",
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "angular",
+      "releaseRules": [
+        {"type": "breaking", "release": "major"},
+      ]
+    }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "$HOME/.poetry/bin/poetry version ${nextRelease.version}",
+    }],
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/changelog", {
+      "changelogFile": "CHANGELOG.md",
+    }],
+    ["@semantic-release/git", {
+      "assets": ["CHANGELOG.md", "pyproject.toml"],
+      "message": "chore(release): <%= nextRelease.version %> - <%= new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }) %> [skip ci]\n\n${nextRelease.notes}"
+    }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "$HOME/.poetry/bin/poetry build",
+      "publishCmd": "$HOME/.poetry/bin/poetry publish"
+    }],
+    ["@semantic-release/github", {
+      "assets": [
+        {"path": "dist/*.tar.gz", "label": "tarball"},
+        {"path": "dist/*.whl", "label": "wheel"}
+      ]
+    }],
+  ]
+}

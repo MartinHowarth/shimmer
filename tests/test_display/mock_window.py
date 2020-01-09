@@ -1,6 +1,4 @@
-"""Mock versions of the graphical dependencies of cocos."""
-
-import cocos
+"""Definition of a mock pyglet window for use in graphical testing without a GUI."""
 
 from typing import Any, List, Tuple, Dict
 
@@ -23,10 +21,3 @@ class MockWindow:
     def dispatch_event(self, event: str, *args: Any, **kwargs: Any) -> None:
         """Record events that are dispatched."""
         self.received_events.append((event, args, kwargs))
-
-
-class MockDirector(cocos.director.Director):
-    """A Mock of the cocos Director."""
-
-    def set_alpha_blending(self, on=True):
-        """Ignore alpha blending."""

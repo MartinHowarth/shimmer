@@ -9,7 +9,7 @@ Testing
 -------
 The following command should be used to run the tests:
 
-    `poetry run pytest tests`
+    poetry run pytest tests
 
 For tests where a window is displayed, read the test description and
 press `Y` or `N` to pass or fail the test. This is intended to allow humans

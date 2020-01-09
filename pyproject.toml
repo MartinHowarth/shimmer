@@ -35,3 +35,7 @@ pytest-mock = "^1.13.0"
 
 [tool.pytest]
 mock_use_standalone_module = true
+[build-system]
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"
+
