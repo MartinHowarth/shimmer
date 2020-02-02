@@ -2,11 +2,10 @@
 
 import asyncio
 import logging
-
 from typing import Optional
 
-from ..entity.entity import Entity
 from .definition import StagedEntityDefinition
+from ..entity.entity import Entity
 
 log = logging.getLogger(__name__)
 

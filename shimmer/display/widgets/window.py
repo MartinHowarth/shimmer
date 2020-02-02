@@ -1,37 +1,35 @@
 """Module defining windows."""
 
-import cocos
-
 from dataclasses import dataclass, replace
-from typing import Dict, Optional
+from typing import Dict, Optional, Union, Tuple
 
-from ..primitives import create_color_rect
-from ..data_structures import (
-    Color,
-    LabelDefinition,
-    VerticalAlignment,
-    VerticalTextAlignment,
-    HorizontalAlignment,
-    FontDefinition,
-    Calibri,
+import cocos
+from ..alignment import (
+    PositionalAnchor,
+    CenterCenter,
+    CenterTop,
 )
-from ..components.box import Box, BoxDefinition
+from ..components.box import Box, BoxDefinition, ActiveBox
 from ..components.draggable_anchor import DraggableAnchor
 from ..components.focus import make_focusable
+from ..components.font import FontDefinition, Calibri
 from ..components.mouse_box import (
-    MouseBox,
     MouseClickEventCallable,
+    MouseBox,
     MouseVoidBoxDefinition,
 )
-from shimmer.display.widgets.button import Button
-from shimmer.display.widgets.close_button import (
+from ..data_structures import Color
+from ..primitives import create_color_rect
+from ..widgets.button import Button
+from ..widgets.close_button import (
     CloseButton,
     CloseButtonDefinitionBase,
 )
+from ..widgets.text_box import TextBox, TextBoxDefinition
 
 
 @dataclass(frozen=True)
-class WindowDefinition(MouseVoidBoxDefinition):
+class WindowDefinition(BoxDefinition):
     """
     Definition of the visual style of a Window.
 
@@ -86,15 +84,11 @@ class WindowDefinition(MouseVoidBoxDefinition):
         )
 
 
-class Window(MouseBox):
+class Window(ActiveBox):
     """
     A Window is a draggable, closeable Box with a title bar.
 
     It has an inner_box for containing children for displaying inside the window.
-
-    The window itself is a MouseVoidBox which prevents all mouse events propagating further.
-    This means that windows can be appear above other nodes without the user accidentally
-    interacting with the node underneath.
 
     All nodes added to the window are placed above this VoidBox so they receive the mouse events
     first.
@@ -112,22 +106,30 @@ class Window(MouseBox):
         super(Window, self).__init__(definition)
 
         self._title: Optional[cocos.text.Label] = None
-        self.title_boxes: Dict[str, Box] = {}
+        self._title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[cocos.layer.ColorLayer] = None
         self._update_title()
         self._update_title_bar_background()
-        self._update_background()
+        self.update_background()
         self._update_close_button()
         self._update_drag_zone()
         self.focus_box = make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
-        self.inner_box: Box = Box(
+        self.body: Box = Box(
             BoxDefinition(
                 width=self.definition.width, height=self.definition.body_height,
             )
         )
-        self.add(self.inner_box)
+        self.add(self.body)
+        self.add(
+            MouseBox(
+                MouseVoidBoxDefinition(
+                    width=self.definition.width, height=self.definition.height,
+                )
+            ),
+            z=-10000,
+        )
 
     @property
     def _title_bar_button_height(self):
@@ -140,7 +142,7 @@ class Window(MouseBox):
         return min(
             [
                 self.rect.width - box.x
-                for box in self.title_boxes.values()
+                for box in self._title_boxes.values()
                 if isinstance(box, Button)
             ]
         )
@@ -162,36 +164,24 @@ class Window(MouseBox):
             edge_length,
         )
 
-    def _create_title(self):
-        """Create the title node. Does not add it to the window."""
-        if self.definition.title is None:
-            return
-
-        title_definition = LabelDefinition(
-            text=self.definition.title,
-            # NB: this uses the defined title bar height, rather than the dynamic property on
-            # this class.
-            height=self.definition.title_bar_height,
-            width=self.definition.width,
-            anchor_y=VerticalTextAlignment.center,
-        )
-
-        self._title = cocos.text.Label(**title_definition.to_pyglet_label_kwargs())
-        self._title.position = (
-            10,
-            self.definition.height - (self.title_bar_height / 2),
-        )
-
     def _update_title(self):
         """Recreate the title."""
-        if self._title is not None and self._title in self:
+        if self._title is not None:
             self.remove(self._title)
 
         if self.definition.title is None:
             return
 
-        self._create_title()
+        title_definition = TextBoxDefinition(
+            text=self.definition.title,
+            height=self.definition.title_bar_height,
+            width=self.definition.width,
+        )
+
+        self._title = TextBox(title_definition)
         self.add(self._title)
+        self._title.align_anchor_with_other_anchor(self, CenterTop)
+        self._title.x = 10
 
     def _update_title_bar_background(self):
         """Redefine the background color of the title bar."""
@@ -206,18 +196,6 @@ class Window(MouseBox):
             self.rect.height - self.title_bar_height,
         )
         self.add(self._title_bar_background, z=-1)
-
-    def _update_background(self):
-        """Redefine the background color of the window body."""
-        if self._background is not None:
-            self.remove(self._background)
-
-        self._background = create_color_rect(
-            self.rect.width,
-            self.rect.height - self.title_bar_height,
-            self.definition.background_color,
-        )
-        self.add(self._background, z=-1)
 
     def _update_close_button(self):
         """Redefine the window close button."""
@@ -238,7 +216,7 @@ class Window(MouseBox):
     @property
     def close_button(self) -> CloseButton:
         """Get the close button of this window."""
-        return self.title_boxes["close"]
+        return self._title_boxes["close"]
 
     def _update_drag_zone(self):
         """
@@ -252,7 +230,7 @@ class Window(MouseBox):
             height=self.title_bar_height,
         )
         self._update_title_bar_box("drag", DraggableAnchor(drag_anchor_definition))
-        self.title_boxes["drag"].position = 0, self.rect.height - self.title_bar_height
+        self._title_boxes["drag"].position = 0, self.rect.height - self.title_bar_height
 
     def _update_title_bar_box(self, name: str, box: Box) -> None:
         """
@@ -261,54 +239,38 @@ class Window(MouseBox):
         :param name: Internal identifier of the Box.
         :param box: New Box node to place in the title bar.
         """
-        if name in self.title_boxes.keys():
-            self.remove(self.title_boxes[name])
+        if name in self._title_boxes.keys():
+            self.remove(self._title_boxes[name])
 
         self.add(box)
-        self.title_boxes[name] = box
+        self._title_boxes[name] = box
 
     def add_child_to_body(
         self,
         child: Box,
-        align_x: HorizontalAlignment = HorizontalAlignment.center,
-        align_y: VerticalAlignment = VerticalAlignment.center,
-        margin_x: int = 0,
-        margin_y: int = 0,
+        body_anchor: PositionalAnchor = CenterCenter,
+        child_anchor: Optional[PositionalAnchor] = None,
+        spacing: Union[int, Tuple[int, int], cocos.draw.Point2] = 0,
     ) -> None:
         """
         Add a child to the body of the window aligned to the edges or center of the window.
 
-        This provides 9 easy positions to place Boxes inside this window.
-        For example:
-          - Center = HorizontalAlignment.center, VerticalAlignment.center
-          - Top-middle = HorizontalAlignment.center, VerticalAlignment.top
-          - ...
-
-        Default is to place the child in the centre of the window.
+        See Box.align_anchor_with_other_anchor for fuller documentation.
 
         If you want finer control over spacing, then you should set positions and add children
-        directly to the `inner_box`.
+        directly to the `body`.
 
         :param child: The child Box to add.
-        :param align_x: X alignment of the child.
-        :param align_y: Y alignment of the child.
-        :param margin_x: Space to leave between edge of window and the box.
-            Has no effect for "center" alignment.
-        :param margin_y: Space to leave between edge of window and the box.
-            Has no effect for "center" alignment.
+        :param body_anchor: The anchor point of the window body to align to.
+            Defaults to CenterCenter.
+        :param child_anchor: The anchor point of the child to align.
+            Defaults to match `body_anchor`.
+        :param spacing: Pixels to leave between the anchors.
         """
-        child.set_position_in_alignment_with(self.inner_box, align_x, align_y)
-        if margin_x:
-            if align_x == HorizontalAlignment.left:
-                child.x += margin_x
-            elif align_x == HorizontalAlignment.right:
-                child.x -= margin_x
-        if margin_y:
-            if align_y == VerticalAlignment.bottom:
-                child.y += margin_y
-            elif align_y == VerticalAlignment.top:
-                child.y -= margin_y
-        self.inner_box.add(child)
+        child.align_anchor_with_other_anchor(
+            self.body, body_anchor, child_anchor, spacing
+        )
+        self.body.add(child)
 
     def close(self):
         """Close this window by simulating a click on the close button."""

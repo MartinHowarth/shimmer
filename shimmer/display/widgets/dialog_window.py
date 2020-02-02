@@ -9,19 +9,18 @@ from dataclasses import replace
 from functools import update_wrapper
 from typing import Optional, Set
 
+from .button import ButtonDefinition
+from .multiple_choice_buttons import (
+    MultipleChoiceButtons,
+    MultipleChoiceButtonsDefinition,
+)
 from .question_definition import (
     MultipleChoiceQuestionDefinition,
     MultipleChoiceResponseCallback,
     QuestionCancelledCallback,
 )
-from .multiple_choice_buttons import (
-    MultipleChoiceButtons,
-    MultipleChoiceButtonsDefinition,
-)
-from .button import ButtonDefinition
 from .window import WindowDefinition, Window
 from ..components.mouse_box import MouseClickEventCallable
-
 
 AreYouSure = MultipleChoiceQuestionDefinition(
     text="Are you sure?", choices=["Yes", "No"], allow_multiple=False,

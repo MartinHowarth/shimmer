@@ -1,29 +1,28 @@
 """Visual display of a code block Instruction."""
 
-import cocos
 import logging
-
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from typing import Optional
 
-
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.data_structures import Color, ActiveGreen
+import cocos
+from shimmer.display.components.box import BoxDefinition
 from shimmer.display.components.draggable_anchor import DraggableAnchor
+from shimmer.display.data_structures import Color, ActiveGreen
+from shimmer.display.primitives import create_color_rect
 from shimmer.display.widgets.button import ButtonDefinition, Button
-
 from shimmer.engine.programmable.definition import Instruction
 
 log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class InstructionDisplayDefinition(BoxDefinition):
-    """Definition of the visual display of an Instruction."""
+class InstructionDisplayDefinition(ButtonDefinition):
+    """
+    Definition of the visual display of an Instruction.
 
-    # The main element of this instruction is a button. If the text is None, then it will be
-    # set to the formatted `method_str` of the instruction.
-    button_definition: ButtonDefinition = field(default_factory=ButtonDefinition)
+    If text is None, then it will be set to the formatted `method_str` of the instruction.
+    """
+
     # Color to display over the Instruction button while the instruction is being executed.
     while_executing_mask: Optional[Color] = replace(ActiveGreen, a=100)
     # String format to use. Will be formatted with `instruction.method_str()`.
@@ -34,7 +33,7 @@ class InstructionDisplayDefinition(BoxDefinition):
     draggable_width: int = 20
 
 
-class InstructionDisplay(Box):
+class InstructionDisplay(Button):
     """
     Display for a code block Instruction.
 
@@ -53,49 +52,39 @@ class InstructionDisplay(Box):
         :param instruction: The Instruction to display.
         :param definition: Definition of the display of the Instruction.
         """
-        super(InstructionDisplay, self).__init__(definition)
+        button_text = self.get_button_text(instruction, definition)
+        definition = replace(definition, text=button_text)
         self.instruction = instruction
-        self.definition: InstructionDisplayDefinition = definition
 
         self.instruction.on_execute_start = self.show_mask
         self.instruction.on_execute_complete = self.hide_mask
 
-        self.button: Optional[Button] = None
         self.drag_anchor: Optional[DraggableAnchor] = None
         self.executing_mask: Optional[cocos.layer.ColorLayer] = None
-        self.update_button()
+
+        super(InstructionDisplay, self).__init__(definition)
+        self.definition: InstructionDisplayDefinition = definition
         self.update_draggable_anchor()
         self.update_mask()
 
-    def get_button_text(self) -> Optional[str]:
+    def on_size_change(self):
+        """Update children as needed if the size of this Box changes."""
+        super(InstructionDisplay, self).on_size_change()
+        self.update_mask()
+
+    @staticmethod
+    def get_button_text(
+        instruction: Instruction, definition: InstructionDisplayDefinition
+    ) -> Optional[str]:
         """
         Get the text of the button should display.
 
         By default it will be `instruction.method_str()` applied to the defined text_format.
         """
-        if self.definition.button_definition.text is None:
-            return self.definition.text_format.format(self.instruction.method_str())
+        if definition.text is None:
+            return definition.text_format.format(instruction.method_str())
         else:
             return None
-
-    def update_button(self):
-        """Re-create the button Box."""
-        if self.button is not None:
-            self.remove(self.button)
-
-        # Make a duplicate of the definition for the actual button with the correct text.
-        text = self.get_button_text()
-        button_definition = replace(self.definition.button_definition, text=text)
-
-        self.button = Button(button_definition)
-        if (
-            self.definition.button_definition.height is None
-            or self.definition.button_definition.width is None
-        ):
-            # And update this rect to match the buttons dynamic size
-            self.rect = self.button.rect
-            self.update_mask()
-        self.add(self.button, z=0)
 
     def update_draggable_anchor(self):
         """Re-create the draggable anchor."""
@@ -107,7 +96,9 @@ class InstructionDisplay(Box):
             return
 
         self.drag_anchor = DraggableAnchor(
-            cocos.rect.Rect(0, 0, self.definition.draggable_width, self.rect.height)
+            BoxDefinition(
+                width=self.definition.draggable_width, height=self.rect.height
+            )
         )
         self.add(self.drag_anchor, z=1)
 
@@ -122,11 +113,10 @@ class InstructionDisplay(Box):
 
         # Create the mask invisible (with 0 opacity), it should be made visible using the
         # instruction callbacks.
-        self.executing_mask = cocos.layer.ColorLayer(
-            *self.definition.while_executing_mask.as_tuple(),
-            0,
+        self.executing_mask = create_color_rect(
             width=self.rect.width,
-            height=self.rect.height
+            height=self.rect.height,
+            color=replace(self.definition.while_executing_mask, a=0),
         )
         self.add(self.executing_mask, z=1)
 

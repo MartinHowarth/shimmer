@@ -22,6 +22,7 @@ toml = "^0.9"
 janus = "^0.4.0"
 cocos2d = "^0.6.7"
 more-itertools = "^8.0.2"
+pyglet = "1.4.3"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
@@ -35,6 +36,7 @@ pytest-mock = "^1.13.0"
 
 [tool.pytest]
 mock_use_standalone_module = true
+
 [build-system]
 requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"

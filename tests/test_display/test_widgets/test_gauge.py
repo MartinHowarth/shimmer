@@ -2,9 +2,9 @@
 
 import pytest
 
+from shimmer.display.widgets.gauge import GaugeDisplay
 from shimmer.engine.widgets.base import FloatRange
 from shimmer.engine.widgets.gauge import GaugeDefinition
-from shimmer.display.widgets.gauge import GaugeDisplay
 
 
 @pytest.fixture

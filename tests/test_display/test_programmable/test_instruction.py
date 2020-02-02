@@ -1,11 +1,11 @@
 """Tests for the graphical display of a code block instruction."""
 
-import cocos
-import pytest
 import time
-
 from concurrent.futures import ThreadPoolExecutor
 
+import pytest
+
+import cocos
 from shimmer.display.programmable.instruction import (
     InstructionDisplay,
     InstructionDisplayDefinition,

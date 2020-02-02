@@ -1,19 +1,18 @@
 """Visual display of a code block If/Else/Elif statement."""
 
 import logging
-
 from dataclasses import dataclass, field
 from typing import cast, Optional, List
 
 from shimmer.display.components.box import Box, BoxDefinition
 from shimmer.display.components.box_layout import BoxColumn
-from shimmer.display.programmable.instruction import (
-    InstructionDisplay,
-    InstructionDisplayDefinition,
-)
 from shimmer.display.programmable.code_block import (
     CodeBlockDisplay,
     CodeBlockDisplayDefinition,
+)
+from shimmer.display.programmable.instruction import (
+    InstructionDisplay,
+    InstructionDisplayDefinition,
 )
 from shimmer.engine.programmable.definition import (
     InstructionWithCodeBlock,
@@ -80,14 +79,6 @@ class InstructionWithBlockDisplay(Box):
             self.instruction, self.definition.instruction_definition
         )
         self.instruction_display.position = 0, self.code_block_display.rect.height
-        self.set_size(
-            max(
-                self.code_block_display.rect.width
-                + self.definition.code_block_indentation,
-                self.instruction_display.rect.width,
-            ),
-            self.code_block_display.rect.height + self.instruction_display.rect.height,
-        )
         self.add(self.instruction_display)
         self.add(self.code_block_display)
 

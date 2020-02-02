@@ -1,14 +1,13 @@
 """Test the various box layout methods."""
 
 import cocos
-
-from shimmer.display.data_structures import Color
-from shimmer.display.widgets.button import ButtonDefinition, Button
 from shimmer.display.components.box_layout import (
     BoxRow,
     BoxColumn,
     build_rectangular_grid,
 )
+from shimmer.display.data_structures import Color
+from shimmer.display.widgets.button import ButtonDefinition, Button
 
 
 def make_visible_button_definition(

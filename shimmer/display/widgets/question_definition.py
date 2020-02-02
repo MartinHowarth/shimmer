@@ -1,7 +1,9 @@
 """Widgets for asking questions of the user."""
 
 from dataclasses import dataclass, field
-from typing import Sequence, Optional, Protocol, Set
+from typing import Sequence, Optional, Protocol, Set, Union
+
+from ..components.box import Box
 
 
 class QuestionCancelledCallback(Protocol):
@@ -16,8 +18,11 @@ class MultipleChoiceResponseCallback(Protocol):
     """Protocol defining the signature of a callback when a multiple choice option is selected."""
 
     def __call__(
-        self, currently_selected: Set[str], changed_choice: str, choice_state: bool,
-    ) -> None:
+        self,
+        currently_selected: Set[Union[str, Box]],
+        changed_choice: Union[str, Box],
+        choice_state: bool,
+    ) -> Optional[bool]:
         """Function signature of a multiple choice response callback."""
         pass
 
@@ -43,13 +48,13 @@ class MultipleChoiceQuestionDefinition(QuestionDefinition):
 
     # The choices to include. Ordering impacts the way the question answer will be presented to the
     # user.
-    choices: Sequence[str] = field(default_factory=list)
+    choices: Sequence[Union[str, Box]] = field(default_factory=list)
 
     # Whether to allow multiple options to be selected at once.
     allow_multiple: bool = False
 
     # Set of choices that will be selected on creation.
-    defaults: Set[str] = field(default_factory=set)
+    defaults: Set[Union[str, Box]] = field(default_factory=set)
 
     # Callback to call when the selection changes.
     # Arguments are:

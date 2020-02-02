@@ -1,20 +1,22 @@
 """Collection of basic graphical constructs."""
 
-import cocos
 import logging
-
 from abc import abstractmethod
 from typing import Any, Tuple
 
-from shimmer.log_utils import log_exceptions
+import cocos
 from shimmer.display.data_structures import Color
+from shimmer.log_utils import log_exceptions
 
 log = logging.getLogger(__name__)
 
 
 def create_color_rect(width: int, height: int, color: Color) -> cocos.layer.ColorLayer:
     """Create a colored rectangle."""
-    return cocos.layer.ColorLayer(*color.as_tuple_alpha(), width=width, height=height)
+    log.debug(f"Creating color rect of size ({width=}, {height=}).")
+    return cocos.layer.ColorLayer(
+        *color.as_tuple_alpha(), width=int(width), height=int(height)
+    )
 
 
 class UpdatingNode(cocos.cocosnode.CocosNode):

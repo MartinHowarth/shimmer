@@ -1,14 +1,12 @@
 """Test data structures used for display elements. These tests do not require a GUI."""
 
-from shimmer.display.data_structures import (
-    LabelDefinition,
-    Calibri,
-)
+from shimmer.display.components.font import Calibri
+from shimmer.display.widgets.text_box import TextBoxDefinition
 
 
-def test_label_definition_to_pyglet_label_kwargs():
-    """Test that a LabelDefinition is correctly converted into pyglet compatible kwargs."""
-    defn = LabelDefinition(text="Test", font=Calibri)
+def test_text_box_definition_to_pyglet_label_kwargs():
+    """Test that a TextBoxDefinition is correctly converted into pyglet compatible kwargs."""
+    defn = TextBoxDefinition(text="Test", font=Calibri)
     assert defn.to_pyglet_label_kwargs() == {
         "align": "left",
         "bold": False,
@@ -19,18 +17,18 @@ def test_label_definition_to_pyglet_label_kwargs():
         "height": None,
         "italic": False,
         "text": "Test",
-        "width": 300,
-        "multiline": True,
+        "width": None,
+        "multiline": False,
         "anchor_x": "left",
         "anchor_y": "bottom",
     }
 
 
-def test_label_definition_auto_multiline(subtests):
+def test_text_box_definition_auto_multiline(subtests):
     """Test that the multiline attribute gets set correctly on dataclass init."""
     with subtests.test("With `width` specified, multiline should be True."):
-        defn = LabelDefinition(text="Test", font=Calibri, width=300)
+        defn = TextBoxDefinition(text="Test", font=Calibri, width=300)
         assert defn.is_multiline() is True
     with subtests.test("With no `width` specified, multiline should be False."):
-        defn = LabelDefinition(text="Test", font=Calibri, width=None)
+        defn = TextBoxDefinition(text="Test", font=Calibri, width=None)
         assert defn.is_multiline() is False

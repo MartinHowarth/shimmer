@@ -1,9 +1,9 @@
 """Manager for many entities. Handles async scheduling of Entities."""
 
 import asyncio
-import janus
-
 from typing import List, Optional
+
+import janus
 
 from shimmer.engine.entity.entity import Entity
 

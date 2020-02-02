@@ -2,7 +2,7 @@
 
 import cocos
 
-from shimmer.display.components.box import Box
+from shimmer.display.components.box import Box, BoxDefinition
 from shimmer.display.inspections import (
     get_boxes_that_intersect_with_box,
     get_all_nodes_of_type,
@@ -41,24 +41,26 @@ def test_get_boxes_that_intersect_with(run_gui, subtests):
     # `run_gui` isn't needed for the display, but it must be initialised to be able to
     # create any cocos nodes.
 
-    box1 = Box(cocos.rect.Rect(0, 0, 10, 10))
-    box2 = Box(cocos.rect.Rect(100, 100, 10, 10))
+    box1 = Box(BoxDefinition(10, 10))
+    box2 = Box(BoxDefinition(10, 10))
+    box2.position = 100, 100
     boxes = [box1, box2]
 
     with subtests.test("Test partial overlap with single box."):
-        test_box = Box(cocos.rect.Rect(0, 0, 5, 5))
+        test_box = Box(BoxDefinition(5, 5))
         overlap = list(get_boxes_that_intersect_with_box(boxes, test_box))
         assert len(overlap) == 1
         assert box1 in overlap
 
     with subtests.test("Test single overlap with box not near the origin."):
-        test_box = Box(cocos.rect.Rect(90, 90, 20, 20))
+        test_box = Box(BoxDefinition(20, 20))
+        test_box.position = 90, 90
         overlap = list(get_boxes_that_intersect_with_box(boxes, test_box))
         assert len(overlap) == 1
         assert box2 in overlap
 
     with subtests.test("Test overlap with multiple boxes."):
-        test_box = Box(cocos.rect.Rect(0, 0, 200, 200))
+        test_box = Box(BoxDefinition(200, 200))
         overlap = list(get_boxes_that_intersect_with_box(boxes, test_box))
         assert len(overlap) == 2
         assert box1 in overlap

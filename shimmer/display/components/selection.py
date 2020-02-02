@@ -8,18 +8,17 @@ For example, this is used to make a unit system where the user can select
 multiple units at once to give them orders.
 """
 
-import cocos
 import logging
-import pyglet
-
 from dataclasses import dataclass, replace
 from typing import Optional, Set, cast, Callable
 
+import pyglet
+
+import cocos
 from shimmer.display.helpers import bitwise_contains
 from .box import Box, BoxDefinition
 from .drawing import RectDrawingBoxDefinition, RectDrawingBox, MouseDefinedRect
 from ..inspections import get_all_nodes_of_type, get_boxes_that_intersect_with_rect
-
 
 log = logging.getLogger(__name__)
 

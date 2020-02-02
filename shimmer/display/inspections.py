@@ -1,9 +1,8 @@
 """Collection of methods for inspecting the GUI state."""
 
-import cocos
-
 from typing import Type, List, Iterable, Generator, Optional
 
+import cocos
 from .components.box import Box
 
 

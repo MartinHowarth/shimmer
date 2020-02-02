@@ -3,9 +3,9 @@
 import logging
 
 from shimmer.display.data_structures import Color
+from shimmer.display.primitives import UpdatingNode
 from shimmer.display.primitives import create_color_rect
 from shimmer.engine.widgets.gauge import GaugeDefinition
-from shimmer.display.primitives import UpdatingNode
 
 log = logging.getLogger(__name__)
 

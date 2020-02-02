@@ -1,9 +1,9 @@
 """Tests for the programmable definitions."""
 
-import pytest
-
 from textwrap import dedent
 from typing import Any
+
+import pytest
 
 from shimmer.engine.programmable.definition import (
     Instruction,

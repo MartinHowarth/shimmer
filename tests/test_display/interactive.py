@@ -1,56 +1,67 @@
 """Module defining test helpers for interactive GUI testing."""
 
-import cocos
-import pyglet
-
+from dataclasses import replace
 from textwrap import dedent
 from typing import Optional
 
+import cocos
+from shimmer.display.alignment import LeftBottom, LeftTop
+from shimmer.display.components.box import ActiveBox, BoxDefinition
+from shimmer.display.components.font import Calibri
+from shimmer.display.keyboard import (
+    KeyboardHandler,
+    KeyboardHandlerDefinition,
+)
+from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
 
-class PassOrFailInput(cocos.layer.Layer):
+
+class PassOrFailInput(ActiveBox):
     """Handler to control pass/fail of test by user pressing Y/N."""
-
-    is_event_handler = True
 
     def __init__(self, test_name: str, test_description: Optional[str] = None):
         """
-        Create a PassOrFailInput cocos layer.
+        Create a PassOrFailInput.
 
         :param test_name: Name of the test to display.
         :param test_description: Description of the test to display.
         """
-        super(PassOrFailInput, self).__init__()
+        window_width, window_height = cocos.director.director.get_window_size()
+        definition = BoxDefinition(width=window_width, height=window_height)
+        super(PassOrFailInput, self).__init__(definition)
         self.passed: bool = False
-        name = cocos.text.Label(
-            test_name,
-            font_name="calibri",
-            font_size=16,
-            bold=True,
-            anchor_x="left",
-            anchor_y="top",
+        name = TextBox(
+            TextBoxDefinition(text=test_name, font=replace(Calibri, bold=True),)
         )
-        name.position = 0, cocos.director.director.get_window_size()[1]
-        description = cocos.text.RichLabel(
-            dedent(test_description or "").strip(),
-            font_name="calibri",
-            font_size=14,
-            anchor_x="left",
-            anchor_y="top",
-            multiline=True,
-            width=cocos.director.director.get_window_size()[0],
+        description = TextBox(
+            TextBoxDefinition(
+                text=dedent(test_description or "").strip(), width=window_width,
+            )
         )
-        description.position = 0, cocos.director.director.get_window_size()[1] - 20
+        keyboard_handler_definition = KeyboardHandlerDefinition(focus_required=False)
+        keyboard_handler_definition.add_keyboard_action_simple(
+            "n", self.fail_test,
+        )
+        keyboard_handler_definition.add_keyboard_action_simple(
+            "y", self.pass_test,
+        )
+        keyboard_handler = KeyboardHandler(keyboard_handler_definition)
         self.add(name)
         self.add(description)
+        self.add(keyboard_handler)
+        name.position = (0, window_height - name.rect.height)
+        description.align_anchor_with_other_anchor(name, LeftBottom, LeftTop)
 
-    def on_key_press(self, key, modifiers):
-        """Handle user key presses to flag pass or failure of the test."""
-        if key == pyglet.window.key.N:
-            self.passed = False
-            cocos.director.director.pop()
-        elif key == pyglet.window.key.Y:
-            self.passed = True
-            cocos.director.director.pop()
+    def fail_test(self):
+        """Mark the test as failed and close the window."""
+        self.passed = False
+        cocos.director.director.pop()
+        return True
+
+    def pass_test(self):
+        """Mark the test as passed and close the window."""
+        self.passed = True
+        cocos.director.director.pop()
+        return True
 
 
 class SimpleEventLayer(cocos.layer.Layer):

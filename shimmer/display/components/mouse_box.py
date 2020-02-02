@@ -1,21 +1,22 @@
 """Definition of a Box that responds in a user-defined way to mouse events."""
 
-import cocos
 import logging
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Protocol
+
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
+import cocos
+from shimmer.display.components.box import ActiveBox, BoxDefinition
 from shimmer.display.helpers import bitwise_add, bitwise_remove, bitwise_contains
 from shimmer.display.primitives import Point2d
-from shimmer.display.components.box import ActiveBox, BoxDefinition
+from shimmer.log_utils import LTRACE
 
 log = logging.getLogger(__name__)
 
 
 class MouseClickEventCallable(Protocol):
-    """Protocol defining the signature of on_press and on_release callbacks."""
+    """Protocol defining the signature of on_select and on_release callbacks."""
 
     def __call__(
         self,
@@ -84,16 +85,21 @@ class MouseBoxDefinition(BoxDefinition):
     Method definitions are optional and are called with the mouse event arguments as keywords.
 
     :param on_press: Called when a mouse button is pressed within the Box.
+    :param on_press_outside: Called when a mouse button is pressed outside of the Box.
+        Cannot cause mouse events to be consumed.
     :param on_release: Called when a mouse button is released within the Box.
-        Note: This may not always follow an `on_press` because the user may drag outside the box
+        Note: This may not always follow an `on_select` because the user may drag outside the box
         before releasing the mouse button.
     :param on_hover: Called when the mouse enters the Box.
     :param on_unhover: Called when the mouse leaves the Box.
     :param on_motion: Called when the mouse moves within the Box.
     :param on_drag: Called when the mouse moves within the Box while mouse buttons are pressed.
+        Note that `start_dragging` and `stop_dragging` must be used to control whether
+        on_drag events are listened to when using the base MouseBox.
     """
 
     on_press: Optional[MouseClickEventCallable] = None
+    on_press_outside: Optional[MouseClickEventCallable] = None
     on_release: Optional[MouseClickEventCallable] = None
     on_hover: Optional[MouseMotionEventCallable] = None
     on_unhover: Optional[MouseMotionEventCallable] = None
@@ -101,25 +107,35 @@ class MouseBoxDefinition(BoxDefinition):
     on_drag: Optional[MouseDragEventCallable] = None
 
 
+def do_nothing(*_, **__):
+    """Do nothing on the event, and return True to mark the event as handled."""
+    return EVENT_HANDLED
+
+
 @dataclass(frozen=True)
 class MouseVoidBoxDefinition(MouseBoxDefinition):
     """Definition of a mouse box that swallows all mouse events."""
 
-    @staticmethod
-    def do_nothing(*_, **__):
-        """Do nothing on the event, and return True to mark the event as handled."""
-        return True
-
-    on_press: Optional[MouseClickEventCallable] = do_nothing
-    on_release: Optional[MouseClickEventCallable] = do_nothing
-    on_hover: Optional[MouseMotionEventCallable] = do_nothing
-    on_unhover: Optional[MouseMotionEventCallable] = do_nothing
-    on_motion: Optional[MouseMotionEventCallable] = do_nothing
-    on_drag: Optional[MouseDragEventCallable] = do_nothing
+    on_press: Optional[MouseClickEventCallable] = field(default=do_nothing)
+    on_press_outside: Optional[MouseClickEventCallable] = field(default=do_nothing)
+    on_release: Optional[MouseClickEventCallable] = field(default=do_nothing)
+    on_hover: Optional[MouseMotionEventCallable] = field(default=do_nothing)
+    on_unhover: Optional[MouseMotionEventCallable] = field(default=do_nothing)
+    on_motion: Optional[MouseMotionEventCallable] = field(default=do_nothing)
+    on_drag: Optional[MouseDragEventCallable] = field(default=do_nothing)
 
 
 class MouseBox(ActiveBox):
-    """A box that reacts to mouse events."""
+    """
+    A box that reacts to mouse events.
+
+    Special care needs to be taken when trying to react to mouse drag events.
+    By default, mouse press and release events do not start/stop dragging as you might expect,
+    this is because it is impossible to define a generic behaviour that works for all situations.
+    Therefore, you should call `start_dragging` and `stop_dragging` respectively when required.
+
+    See `DraggableAnchor` for an example.
+    """
 
     definition_type = MouseBoxDefinition
 
@@ -158,6 +174,22 @@ class MouseBox(ActiveBox):
             return None
 
         return self.definition.on_press(
+            box=self, x=x, y=y, buttons=buttons, modifiers=modifiers
+        )
+
+    def _on_press_outside(
+        self, x: int, y: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
+        """
+        Called when a click occurs that does not intersect with this Box.
+
+        Calls the `on_press_outside` callback from the definition, passing information about
+        the event to the callback.
+        """
+        if self.definition.on_press_outside is None:
+            return None
+
+        return self.definition.on_press_outside(
             box=self, x=x, y=y, buttons=buttons, modifiers=modifiers
         )
 
@@ -254,7 +286,10 @@ class MouseBox(ActiveBox):
         :param buttons: Int indicating which mouse buttons are pressed (see pyglet).
         :return: True if this Box should handle the mouse click press.
         """
-        return self.definition.on_press is not None
+        return (
+            self.definition.on_press is not None
+            or self.definition.on_press_outside is not None
+        )
 
     def _should_handle_mouse_release(self, buttons: int) -> bool:
         """
@@ -311,7 +346,12 @@ class MouseBox(ActiveBox):
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
         if self.contains_coord(*coord):
             result = self._on_press(*coord, buttons, modifiers)
-            return EVENT_HANDLED if result in [True, None] else EVENT_UNHANDLED
+            if result is EVENT_HANDLED:
+                log.debug(f"on_mouse_press consumed by {self}.")
+                return EVENT_HANDLED
+        else:
+            self._on_press_outside(*coord, buttons, modifiers)
+
         return EVENT_UNHANDLED
 
     def on_mouse_release(
@@ -328,7 +368,9 @@ class MouseBox(ActiveBox):
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
         if self.contains_coord(*coord):
             result = self._on_release(*coord, buttons, modifiers)
-            return EVENT_HANDLED if result in [True, None] else EVENT_UNHANDLED
+            if result is EVENT_HANDLED:
+                log.debug(f"on_mouse_release consumed by {self}.")
+                return EVENT_HANDLED
         return EVENT_UNHANDLED
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
@@ -363,7 +405,10 @@ class MouseBox(ActiveBox):
             # By default, do not return EVENT_HANDLED on unhover as we have left
             # the button area.
 
-        return EVENT_HANDLED if result in [True] else EVENT_UNHANDLED
+        if result is EVENT_HANDLED:
+            log.log(LTRACE, f"on_mouse_motion consumed by {self}.")
+            return EVENT_HANDLED
+        return EVENT_UNHANDLED
 
     def on_mouse_drag(
         self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int
@@ -377,12 +422,23 @@ class MouseBox(ActiveBox):
         # control whether drag events should be handled or not.
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
         result = self._on_drag(*coord, dx, dy, buttons, modifiers)
-        return EVENT_HANDLED if result in [True, None] else EVENT_UNHANDLED
+        if result is EVENT_HANDLED:
+            log.log(LTRACE, f"on_mouse_drag consumed by {self}.")
+            return EVENT_HANDLED
+        return EVENT_UNHANDLED
 
-    def start_dragging(self, *_, **__):
+    def start_dragging(
+        self, box: "MouseBox", x: int, y: int, buttons: int, modifiers: int,
+    ) -> bool:
         """Callback to start dragging this Box."""
+        log.debug(f"Start dragging {self}.")
         self._currently_dragging = True
+        return EVENT_HANDLED
 
-    def stop_dragging(self, *_, **__):
+    def stop_dragging(
+        self, box: "MouseBox", x: int, y: int, buttons: int, modifiers: int,
+    ) -> bool:
         """Callback to stop dragging this Box."""
+        log.debug(f"Stop dragging {self}.")
         self._currently_dragging = False
+        return EVENT_HANDLED

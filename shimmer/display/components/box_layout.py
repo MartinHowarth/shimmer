@@ -1,11 +1,10 @@
 """Definition of ways to arrange Boxes."""
 
-import cocos
-
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import List, Union, Optional
 
+import cocos
 from .box import Box
 
 
@@ -63,13 +62,16 @@ class BoxLayout(Box):
         self._spacing = value
         self.update_layout()
 
-    def remove(self, obj: Union[cocos.cocosnode.CocosNode, Box]) -> None:
+    def remove(
+        self, obj: Union[cocos.cocosnode.CocosNode, Box], no_resize: bool = False
+    ) -> None:
         """
         Remove an object from this Layout, and update the position of other Boxes if needed.
 
         :param obj: CocosNode to remove.
+        :param no_resize: If True, then the size of this box is not dynamically changed.
         """
-        super(BoxLayout, self).remove(obj)
+        super(BoxLayout, self).remove(obj, no_resize=no_resize)
         if isinstance(obj, Box):
             self._boxes.remove(obj)
             self.update_layout()
@@ -116,11 +118,8 @@ class BoxRow(BoxLayout):
         for box in self._boxes:
             box.x = x_total
             x_total += box.rect.width + self._spacing
-        height = max([box.rect.height for box in self._boxes])
-        width = sum((box.rect.width for box in self._boxes)) + self._spacing * (
-            len(self._boxes) - 1
-        )
-        self.set_size(width, height)
+
+        self.update_rect()
 
 
 class BoxColumn(BoxLayout):
@@ -136,11 +135,8 @@ class BoxColumn(BoxLayout):
         for box in self._boxes:
             box.y = y_total
             y_total += box.rect.height + self._spacing
-        width = max([box.rect.width for box in self._boxes])
-        height = sum((box.rect.height for box in self._boxes)) + self._spacing * (
-            len(self._boxes) - 1
-        )
-        self.set_size(width, height)
+
+        self.update_rect()
 
 
 def build_rectangular_grid(

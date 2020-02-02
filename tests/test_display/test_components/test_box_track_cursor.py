@@ -1,10 +1,10 @@
 """Test a Box that tracks the cursor."""
 
-from shimmer.display.data_structures import Color
 from shimmer.display.components.box_track_cursor import (
     BoxTrackCursor,
     BoxTrackCursorDefinition,
 )
+from shimmer.display.data_structures import Color
 
 
 def test_box_track_cursor(run_gui):

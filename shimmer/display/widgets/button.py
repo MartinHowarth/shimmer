@@ -4,23 +4,26 @@ A visible, clickable button.
 Changes color when interacted with (clicked. on hover) and calls the defined methods.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
 import cocos
-
 from shimmer.display.components.mouse_box import (
     MouseBoxDefinition,
     MouseBox,
+    EVENT_HANDLED,
 )
+from shimmer.display.data_structures import Color, PassiveBlue, ActiveBlue, MutedBlue
+from shimmer.display.helpers import bitwise_contains
 from shimmer.display.keyboard import (
     KeyboardActionDefinition,
-    KeyMap,
+    KeyboardHandlerDefinition,
     KeyboardHandler,
 )
-from shimmer.display.helpers import bitwise_contains
-from shimmer.display.data_structures import Color, PassiveBlue, ActiveBlue, MutedBlue
-from shimmer.display.primitives import create_color_rect
+from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -28,12 +31,10 @@ class ButtonDefinition(MouseBoxDefinition):
     """A Button definition with visual elements."""
 
     text: Optional[str] = None
+
     base_color: Color = PassiveBlue
     depressed_color: Optional[Color] = MutedBlue
     hover_color: Optional[Color] = ActiveBlue
-
-    # Automatically match the button size to the text size.
-    dynamic_size: bool = False
 
     keyboard_shortcut: Optional[str] = None
 
@@ -75,8 +76,6 @@ class Button(MouseBox):
     Changes color when hovered over or clicked on.
     """
 
-    definition: ButtonDefinition
-
     def __init__(self, definition: ButtonDefinition):
         """
         Create a new Button.
@@ -84,11 +83,11 @@ class Button(MouseBox):
         :param definition: Definition of the button.
         """
         super(Button, self).__init__(definition)
-        self.label: Optional[cocos.text.Label] = None
-        self.color_rect: cocos.layer.ColorLayer = None
+        self.definition: ButtonDefinition = self.definition
+        self.label: Optional[TextBox] = None
         self.keyboard_handler: Optional[KeyboardHandler] = None
         self.update_label()
-        self.update_color_layer()
+        self._set_background_color(self.definition.base_color)
         self.update_keyboard_handler()
 
     @property
@@ -96,51 +95,25 @@ class Button(MouseBox):
         """Get the rect defining the shape of this button."""
         return self._rect
 
-    @rect.setter
-    def rect(self, value: cocos.rect.Rect) -> None:
-        """Set the rect defining the shape of this button and redraw the button."""
-        self._update_rect(value)
-        self.update_color_layer()
-        self.update_label()
-
     def update_label(self):
-        """Recreate the button label and update color layer as needed."""
+        """Recreate the button label."""
         if self.label is not None:
-            self.remove(self.label)
+            # Don't resize because the label is what controls a dynamically sized button,
+            # so save the resizing to when we re-make the label.
+            # If the label is just totally removed then there isn't a sensible size to resize
+            # to anyway.
+            self.remove(self.label, no_resize=True)
 
-        if self.definition.text is None:
+        if self.definition.formatted_text is None:
             self.label = None
             return
 
-        self.label = cocos.text.RichLabel(
-            self.definition.formatted_text,
-            font_name="calibri",
-            font_size=16,
-            bold=True,
-            anchor_x="center",
-            anchor_y="center",
-        )
-        # Set size dynamically if either defined width or height are None.
-        if self.definition.dynamic_size:
-            new_width = self.label.element.content_width
-            new_height = self.label.element.content_height
-            self.set_size(new_width, new_height)
-            self.update_color_layer()
-
-        self.label.position = self.rect.width / 2, self.rect.height / 2
+        self.label = TextBox(TextBoxDefinition(text=self.definition.formatted_text))
         self.add(self.label)
-
-    def update_color_layer(self):
-        """Recreate the button color layer."""
-        if self.color_rect is not None:
-            self.remove(self.color_rect)
-
-        # Include the `or 1` to override cocos default behaviour to make the
-        # layer the size of the entire window.
-        self.color_rect = create_color_rect(
-            self.rect.width or 1, self.rect.height or 1, self.definition.base_color
-        )
-        self.add(self.color_rect, z=-1)
+        if not self.definition.is_dynamic_sized:
+            # If dynamic sized, then the label helps control setting the size, so it makes no
+            # sense to align it.
+            self.label.align_anchor_with_other_anchor(self)
 
     def _should_handle_mouse_press(self, buttons: int) -> bool:
         """Whether this button should handle mouse press events."""
@@ -169,41 +142,36 @@ class Button(MouseBox):
         )
 
     def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> Optional[bool]:
-        """Change the button color and call the on_press callback."""
-        result = super(Button, self)._on_press(x, y, buttons, modifiers)
+        """Change the button color and call the on_select callback."""
+        super(Button, self)._on_press(x, y, buttons, modifiers)
         if self.definition.depressed_color is not None:
-            self.color_rect.color = self.definition.depressed_color.as_tuple()
-            # self.color_rect.opacity = self.definition.depressed_color.a
-        return result
+            self._set_background_color(self.definition.depressed_color)
+        return EVENT_HANDLED
 
     def _on_release(
         self, x: int, y: int, buttons: int, modifiers: int
     ) -> Optional[bool]:
         """Change the button color and call the on_release callback."""
-        result = super(Button, self)._on_release(x, y, buttons, modifiers)
+        super(Button, self)._on_release(x, y, buttons, modifiers)
         if self._currently_hovered:
             if self.definition.hover_color is not None:
-                self.color_rect.color = self.definition.hover_color.as_tuple()
-                # self.color_rect.opacity = self.definition.hover_color.a
+                self._set_background_color(self.definition.hover_color)
         else:
-            self.color_rect.color = self.definition.base_color.as_tuple()
-            # self.color_rect.opacity = self.definition.base_color.a
-        return result
+            self._set_background_color(self.definition.base_color)
+        return EVENT_HANDLED
 
     def _on_hover(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """Change the button color and call the on_hover callback."""
         result = super(Button, self)._on_hover(x, y, dx, dy)
         if self.definition.hover_color is not None:
-            self.color_rect.color = self.definition.hover_color.as_tuple()
-            # self.color_rect.opacity = self.definition.hover_color.a
+            self._set_background_color(self.definition.hover_color)
         return result
 
     def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """Change the button color and call the on_unhover callback."""
         result = super(Button, self)._on_unhover(x, y, dx, dy)
         if self.definition.hover_color is not None:
-            self.color_rect.color = self.definition.base_color.as_tuple()
-            # self.color_rect.opacity = self.definition.base_color.a
+            self._set_background_color(self.definition.base_color)
         return result
 
     def on_keyboard_hover(self) -> Optional[bool]:
@@ -227,14 +195,14 @@ class Button(MouseBox):
         Recreate the keyboard handler for this Button.
 
         Listens for keyboard presses for the configured keyboard_shortcut and
-        activates on_press and on_release for this button on each key press.
+        activates on_select and on_release for this button on each key press.
         """
         self.keyboard_handler = None
 
         if self.definition.keyboard_shortcut is None:
             return
 
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(
             chords=[
                 self.definition.keyboard_shortcut.upper(),
@@ -270,7 +238,7 @@ class ToggleButton(Button):
         """
         Set the toggled state of this button.
 
-        Calls the on_press / on_release as appropriate.
+        Calls the on_select / on_release as appropriate.
         """
         if self._is_toggled != value:
             # If requested state is different to current state, then toggle this button.
@@ -281,7 +249,7 @@ class ToggleButton(Button):
         """
         Called when the Box is clicked by the user.
 
-        Alternatively calls the `on_press` and `on_release` callback from the definition on each
+        Alternatively calls the `on_select` and `on_release` callback from the definition on each
         press.
         """
         self._is_toggled = not self._is_toggled
@@ -304,6 +272,6 @@ class ToggleButton(Button):
         if self.definition.hover_color is not None:
             # Reset the color back to what is should be based on the toggled state.
             if not self._is_toggled:
-                self.color_rect.color = self.definition.base_color.as_tuple()
+                self._set_background_color(self.definition.base_color)
             elif self.definition.depressed_color is not None:
-                self.color_rect.color = self.definition.depressed_color.as_tuple()
+                self._set_background_color(self.definition.depressed_color)

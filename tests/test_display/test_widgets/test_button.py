@@ -1,17 +1,17 @@
 """Test the button widget."""
 
-import pytest
-
 from dataclasses import replace
-from mock import MagicMock
 from typing import Any, no_type_check
+
+import pytest
+from mock import MagicMock
 
 from shimmer.display.data_structures import Color
 from shimmer.display.widgets.button import ButtonDefinition, Button, ToggleButton
 
 
 @pytest.fixture
-def button_definition():
+def button_definition() -> ButtonDefinition:
     """Common definition of a button for use in the tests."""
     return ButtonDefinition(
         text="Click me!",
@@ -37,7 +37,7 @@ def test_button(run_gui, button_definition):
     """Button that changes color and label when interacted with."""
     defn = replace(
         button_definition,
-        on_press=change_text_callback("on_press"),
+        on_press=change_text_callback("on_select"),
         on_release=change_text_callback("on_release"),
         on_hover=change_text_callback("on_hover"),
         on_unhover=change_text_callback("on_unhover"),
@@ -60,11 +60,12 @@ def test_button_dynamic_size(run_gui, button_definition):
     """Button whose size always exactly fits the text on it."""
     defn = replace(
         button_definition,
-        on_press=change_text_callback("on_press"),
+        width=None,
+        height=None,
+        on_press=change_text_callback("on_select"),
         on_release=change_text_callback("on_release"),
         on_hover=change_text_callback("on_hover"),
         on_unhover=change_text_callback("on_unhover"),
-        dynamic_size=True,
     )
     layer = Button(defn)
 
@@ -96,7 +97,7 @@ def test_toggle_button_no_gui(subtests, mock_gui, mock_mouse):
         )
     )
 
-    with subtests.test("Test that the first click calls `on_press` only."):
+    with subtests.test("Test that the first click calls `on_select` only."):
         mock_mouse.click(button)
         button.definition.on_release.assert_not_called()
         button.definition.on_press.assert_called_once()
@@ -112,7 +113,7 @@ def test_toggle_button_no_gui(subtests, mock_gui, mock_mouse):
 
     button.definition.on_release.reset_mock()
 
-    with subtests.test("Test that the third click calls `on_press` only."):
+    with subtests.test("Test that the third click calls `on_select` only."):
         mock_mouse.click(button)
         button.definition.on_release.assert_not_called()
         button.definition.on_press.assert_called_once()

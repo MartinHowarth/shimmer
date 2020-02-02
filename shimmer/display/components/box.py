@@ -4,27 +4,52 @@ Definition of the Box primitive.
 A Box is a CocosNode that defines an area.
 """
 
+import logging
+from dataclasses import dataclass, fields, replace
+from typing import Optional, Type, Iterable, Tuple, Union
+
 import cocos
-
-from dataclasses import dataclass, replace
-from typing import Optional, Union, Type, Iterable, Generator
-
-from ..data_structures import Color, HorizontalAlignment, VerticalAlignment, ZIndexEnum
+from ..alignment import (
+    ZIndexEnum,
+    PositionalAnchor,
+    CenterCenter,
+)
+from ..data_structures import Color
 from ..primitives import create_color_rect
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class BoxDefinition:
     """Common definition to all Boxes."""
 
-    width: int = 0
-    height: int = 0
+    # If either `width` or `height` are None then the box size will dynamically encompass all of
+    # its children in the both dimensions.
+    # Set to 0 to match the entire window size.
+    width: Optional[int] = None
+    height: Optional[int] = None
 
     background_color: Optional[Color] = None
 
-    def as_rect(self) -> cocos.rect.Rect:
-        """Return a Rect of the size defined by this BoxDefinition."""
-        return cocos.rect.Rect(0, 0, self.width, self.height)
+    def __str__(self) -> str:
+        """String representation that excludes fields that have their default value."""
+        params = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if hasattr(value, "__name__"):
+                # Don't recurse into getting the string representation of methods, as these
+                # are often bound methods and result in calling back into this function.
+                value = value.__name__
+
+            if value != field.default:
+                params[field.name] = str(value)
+        return f"{self.__class__.__name__}({params})"
+
+    @property
+    def is_dynamic_sized(self) -> bool:
+        """True if the defined Box should have dynamic size, otherwise False."""
+        return self.width is None or self.height is None
 
 
 class Box(cocos.cocosnode.CocosNode):
@@ -39,9 +64,22 @@ class Box(cocos.cocosnode.CocosNode):
             definition = self.definition_type()
 
         self.definition = definition
-        self._rect = self.definition.as_rect()
+        self._width: int = self.definition.width or 0
+        self._height: int = self.definition.height or 0
+        self._rect = cocos.rect.Rect(0, 0, self._width, self._height)
         self._background: Optional[cocos.layer.ColorLayer] = None
-        self._update_background()
+        self.update_background()
+
+    def __repr__(self):
+        """String representation of this Box."""
+        return f"{self.__class__.__name__}({self.definition})"
+
+    def __str__(self):
+        """String representation of this Box."""
+        return (
+            f"[{id(self)}][{self.world_rect}] {repr(self)} "
+            f"child of <{repr(self.parent)}>"
+        )
 
     def contains_coord(self, x: int, y: int) -> bool:
         """Returns whether the point (x,y) is inside the box."""
@@ -50,49 +88,92 @@ class Box(cocos.cocosnode.CocosNode):
 
     @property
     def rect(self) -> cocos.rect.Rect:
-        """Return the rect that this box encompasses."""
+        """
+        Return the rect that this box encompasses.
+
+        This rect is in the parent coordinate space.
+        """
         return self._rect
-
-    @rect.setter
-    def rect(self, value: cocos.rect.Rect) -> None:
-        """
-        Intercept setting of the rect to re-position this Box onto the given rect.
-
-        If you only want to change the size of this Box without changing its position, use
-        `self.set_size(width, height)` instead.
-
-        :param value: Rect to set this Box to.
-        """
-        self._update_rect(value)
 
     @property
     def world_rect(self) -> cocos.rect.Rect:
         """Get the rect for this Box in world coordinate space."""
-        # Boxes set their rect position to be 0, 0 (the Box's position is set to the rect coords
-        # instead).
         return cocos.rect.Rect(
             *self.point_to_world((0, 0)), self.rect.width, self.rect.height
         )
 
-    def _update_rect(self, rect: cocos.rect.Rect) -> None:
-        """Update the position and size of this Box to the given rect."""
-        self.position = rect.x, rect.y
-        self.definition = replace(self.definition, width=rect.width, height=rect.height)
-        self._rect = self.definition.as_rect()
-        self._update_background()
+    def update_rect(self):
+        """
+        Update the cached rect definition.
 
-    def set_size(self, width: int, height: int) -> None:
-        """Update the size of this Box without changing position."""
-        self._update_rect(cocos.rect.Rect(*self.position, width, height))
+        If the rect size changes, then `on_size_change` will be called.
+        """
+        if self.definition.is_dynamic_sized:
+            children_rect = self.bounding_rect_of_children()
+            self._width = children_rect.width
+            self._height = children_rect.height
+        else:
+            self._width = self.definition.width or 0
+            self._height = self.definition.height or 0
 
-    def get_z_value(self) -> int:
+        if self._width != self._rect.width or self._height != self._rect.height:
+            self._rect.set_size((self._width, self._height))
+            self.on_size_change()
+
+    def on_size_change(self):
+        """
+        Called when the size of the Box changes.
+
+        Only applicable for dynamically sized Boxes.
+
+        Called when `update_rect` detects a size change.
+        """
+        self.update_background()
+
+    def add(
+        self,
+        child: cocos.cocosnode.CocosNode,
+        z: int = 0,
+        name: Optional[str] = None,
+        no_resize: bool = False,
+    ) -> None:
+        """
+        Add a child to this Box. See CocosNode for parameter arguments.
+
+        When adding a child, check for updating dynamic size of this Box.
+
+        :param child: CocosNode to add.
+        :param z: See CocosNode
+        :param name: See CocosNode
+        :param no_resize: If True, then the size of this box is not dynamically changed.
+        """
+        super(Box, self).add(child, z, name)
+        if self.definition.is_dynamic_sized and not no_resize:
+            self.update_rect()
+
+    def remove(self, child: cocos.cocosnode.CocosNode, no_resize: bool = False) -> None:
+        """
+        Remove a child from this Box. See CocosNode for parameter arguments.
+
+        When removing a child, check for updating dynamic size of this Box.
+
+        :param child: CocosNode to remove.
+        :param no_resize: If True, then the size of this box is not dynamically changed.
+        """
+        super(Box, self).remove(child)
+        if self.definition.is_dynamic_sized and not no_resize:
+            self.update_rect()
+
+    def get_z_value(self) -> Optional[int]:
         """
         Get the z value of this Box in its parents children list.
+
+        Returns None if this child has no parent.
 
         Raises ValueError if this child is not a child of parent (should never happen).
         """
         if self.parent is None:
-            raise AttributeError(f"{self} has no parent.")
+            return None
 
         for z, child in self.parent.children:
             if child is self:
@@ -140,121 +221,147 @@ class Box(cocos.cocosnode.CocosNode):
         self.parent.remove(self)
         self.parent.add(self, z=z)
 
-    def _update_background(self):
-        """Set the background color of this Box."""
+    def update_background(self) -> None:
+        """
+        Re-create the background of this Box to take account of changed size or color.
+
+        If the background color is None, then the background is removed.
+        """
         # Remove the old background
         if self._background is not None:
-            self.remove(self._background)
+            self.remove(self._background, no_resize=True)
 
-        # Don't create a new background if the color is None
-        # (this allows removal of the background color)
         if self.definition.background_color is None:
             return
 
-        self._background = create_color_rect(
-            self.definition.width,
-            self.definition.height,
-            self.definition.background_color,
-        )
-        self._background.position = (0, 0)
-        self.add(self._background, z=-1)
+        if self._width > 0 and self._height > 0:
+            self._background = create_color_rect(
+                self._width, self._height, self.definition.background_color
+            )
+            self._background.position = (0, 0)
+            self.add(self._background, z=-100, no_resize=True)
 
-    def set_transform_anchor(
-        self,
-        anchor_x: Optional[HorizontalAlignment] = None,
-        anchor_y: Optional[VerticalAlignment] = None,
-    ) -> None:
+    def _set_background_color(self, color: Color) -> None:
+        """Set the color of the background of this box to the given Color."""
+        self.definition = replace(self.definition, background_color=color)
+        if self._background is not None:
+            self._background.color = color.as_tuple()
+            self._background.opacity = color.a
+        else:
+            self.update_background()
+
+    def get_coordinates_of_anchor(self, anchor: PositionalAnchor) -> cocos.draw.Point2:
         """
-        Set the cocos transform anchor to the given alignments.
+        Get the (x, y) coordinate of the given anchor point in this Box.
 
-        :param anchor_x: Enum member defining the X anchor position to set.
-            If None, then horizontal anchor is left unchanged.
-        :param anchor_y: Enum member defining the Y anchor position to set.
-            If None, then vertical anchor is left unchanged.
+        :param anchor: The anchor to get the position of.
+        :return: cocos.draw.Point2 of the anchor position.
         """
-        if anchor_x is None:
-            pass
-        elif anchor_x == HorizontalAlignment.left:
-            self.anchor_x = 0
-        elif anchor_x == HorizontalAlignment.center:
-            self.anchor_x = self.rect.width / 2
-        elif anchor_x == HorizontalAlignment.right:
-            self.anchor_x = self.rect.width
+        return anchor.get_coord_in_rect(self._width, self._height)
 
-        if anchor_y is None:
-            pass
-        elif anchor_y == VerticalAlignment.bottom:
-            self.anchor_y = 0
-        elif anchor_y == VerticalAlignment.center:
-            self.anchor_y = self.rect.height / 2
-        elif anchor_y == VerticalAlignment.top:
-            self.anchor_y = self.rect.height
-
-    def set_center_as_transform_anchor(self):
-        """Set the cocos transform anchor to the center point."""
-        self.set_transform_anchor(HorizontalAlignment.center, VerticalAlignment.center)
-
-    def set_bottom_left_as_transform_anchor(self):
-        """Set the cocos transform anchor to the bottom left. This is the default on creation."""
-        self.set_transform_anchor(HorizontalAlignment.left, VerticalAlignment.bottom)
-
-    def set_position_in_alignment_with(
+    def align_anchor_with_other_anchor(
         self,
         other: "Box",
-        align_x: Optional[HorizontalAlignment] = None,
-        align_y: Optional[VerticalAlignment] = None,
+        other_anchor: PositionalAnchor = CenterCenter,
+        self_anchor: Optional[PositionalAnchor] = None,
+        spacing: Union[int, Tuple[int, int], cocos.draw.Point2] = 0,
     ) -> None:
         """
-        Set the position of this Box to be aligned with the given point of the other Box.
+        Set an anchor of this Box to be aligned an anchor of the other Box.
 
-        This provides 9 easy positions to arrange Boxes inside this box.
-        For example:
-          - Center = HorizontalAlignment.center, VerticalAlignment.center
-          - Top-middle = HorizontalAlignment.center, VerticalAlignment.top
-          - ...
+        For example, to align the right edge of this box with the left edge of the other:
+
+            self.align_anchor_with_other_anchor(other, RightCenter, LeftCenter)
 
         :param other: The Box to align this one with.
-        :param align_x: The horizontal alignment to set.
-            If None, X position is left unchanged.
-        :param align_y: The vertical alignment to set.
-            If None, Y position is left unchanged.
+        :param other_anchor: The anchor point of the other Box to align.
+            Defaults to CenterCenter.
+        :param self_anchor: The anchor point of this Box to align.
+            Defaults to match `other_anchor`.
+        :param spacing: Pixels to leave between the anchors.
+            If an `int` is given, the direction of the spacing the vector defined between the
+                given self_anchor and the CenterCenter of this Box.
+                Positive integers serve to make more space between the edges of the two Boxes,
+                while negative integers serve to cause the Box edges to overlap.
+            If a Tuple[int, int] is given, then it is treated as an exact (x, y) offset.
         """
-        if align_x is None:
-            pass
-        elif align_x == HorizontalAlignment.left:
-            self.x = 0
-        elif align_x == HorizontalAlignment.center:
-            self.x = (other.rect.width / 2) - (self.rect.width / 2)
-        elif align_x == HorizontalAlignment.right:
-            self.x = other.rect.width - self.rect.width
+        if not self.is_running:
+            # We need to work in a common coordinate space. The easiest choice is the director.
+            # We could check for the director as an ancestor; but it is sufficient to check that
+            # the Box is running (i.e. in the current scene).
+            #
+            # If this Box is not in the scene, then we cannot calculate relative positioning
+            # reliably. However, it still works accurately for Boxes that are being aligned
+            # with their parent or with siblings. Therefore only log rather than error out.
+            log.debug(
+                f"This Box is not in the scene, "
+                f"so setting relative positioning may by unstable. {self=}, {other=}"
+            )
 
-        if align_y is None:
-            pass
-        elif align_y == VerticalAlignment.bottom:
-            self.y = 0
-        elif align_y == VerticalAlignment.center:
-            self.y = (other.rect.height / 2) - (self.rect.height / 2)
-        elif align_y == VerticalAlignment.top:
-            self.y = other.rect.height - self.rect.height
+        if self_anchor is None:
+            self_anchor = other_anchor
 
-    def get_family_tree(self) -> Generator["Box", None, None]:
-        """
-        Generate all children, grandchildren (etc) of this Box that are also Boxes.
+        # Get the anchor coordinates in each Boxes coordinate space.
+        self_point = self.get_coordinates_of_anchor(self_anchor)
+        other_point = other.get_coordinates_of_anchor(other_anchor)
 
-        Also yields this Box.
-        """
-        yield self
-        for child in self.get_children():
-            if isinstance(child, Box):
-                yield from child.get_family_tree()
+        # Translate those coordinates into the world coordinate space to ensure a common
+        # coordinate space.
+        self_world_point = self.point_to_world(self_point)
+        other_world_point = other.point_to_world(other_point)
+
+        # Get the difference between those two points in world space, which is the amount we need
+        # to translate this Box by to align the two anchors.
+        anchor_vector = other_world_point - self_world_point
+
+        # Now account for spacing.
+        # If the spacing is an integer, then it is applied in the direction defined from
+        # the given self_anchor to the CenterCenter of this Box.
+        if isinstance(spacing, (cocos.draw.Point2, cocos.draw.Vector2)):
+            spacing_vector = spacing
+        elif isinstance(spacing, tuple):
+            spacing_vector = cocos.draw.Point2(*spacing)
+        else:
+            # spacing is an int
+            if spacing == 0 or self_anchor == CenterCenter:
+                spacing_vector = cocos.draw.Point2(0, 0)
+            else:
+                spacing_vector = self.get_coordinates_of_anchor(
+                    CenterCenter
+                ) - self.get_coordinates_of_anchor(self_anchor)
+                spacing_vector.normalize()
+                spacing_vector *= spacing
+
+        self.position += anchor_vector + spacing_vector
 
     def bounding_rect_of_children(self) -> cocos.rect.Rect:
         """
-        Return the rect that contains all the children Boxes of this Box.
+        Return the rect that contains all the child (and grandchild etc.) Boxes of this Box.
 
-        This recursively finds all children of this boxes children as well.
+        The Rect of this Box is not taken into account.
+
+        The bottom-left corner of the returned rect is aligned with the origin of this Box.
         """
-        return bounding_rect_of_boxes(self.get_family_tree())
+
+        def get_world_rect(
+            node: cocos.cocosnode.CocosNode,
+        ) -> Optional[cocos.rect.Rect]:
+            if isinstance(node, Box) and node is not self:
+                return node.world_rect
+            return None
+
+        world_rects = list(filter(lambda x: x is not None, self.walk(get_world_rect)))
+        if len(world_rects) != 0:
+            bounding_world_rect = bounding_rect_of_rects(world_rects)
+            bounding_local_rect = cocos.rect.Rect(
+                *self.point_to_local(bounding_world_rect.position),
+                bounding_world_rect.width,
+                bounding_world_rect.height,
+            )
+        else:
+            bounding_local_rect = cocos.rect.Rect(0, 0, 0, 0)
+
+        return bounding_local_rect
 
 
 class ActiveBox(Box):
@@ -275,18 +382,10 @@ class ActiveBox(Box):
         super(ActiveBox, self).on_exit()
 
 
-def bounding_rect_of_boxes(boxes: Iterable[Box]) -> cocos.rect.Rect:
-    """
-    Return the minimal rect needed to cover all the given boxes.
-
-    This is calculated in the coordinate space of the parent of the boxes.
-    If the boxes do not share a common parent then the resulting rect may be odd.
-    """
+def bounding_rect_of_rects(rects: Iterable[cocos.rect.Rect]) -> cocos.rect.Rect:
+    """Return the minimal rect needed to cover all the given rects."""
     lefts, rights, tops, bottoms = zip(
-        *(
-            (box.x, box.x + box.definition.width, box.y + box.definition.height, box.y)
-            for box in boxes
-        )
+        *((rect.x, rect.x + rect.width, rect.y + rect.height, rect.y) for rect in rects)
     )
 
     left = min(lefts)

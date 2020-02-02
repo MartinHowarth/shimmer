@@ -5,9 +5,8 @@ Performs tests with a mock GUI to check event handling is correct.
 """
 
 import cocos
-
-from shimmer.display.components.box import Box, BoxDefinition, bounding_rect_of_boxes
-from shimmer.display.data_structures import ZIndexEnum
+from shimmer.display.alignment import ZIndexEnum
+from shimmer.display.components.box import Box, BoxDefinition, bounding_rect_of_rects
 
 
 def make_dummy_box() -> Box:
@@ -15,19 +14,6 @@ def make_dummy_box() -> Box:
     box = Box(BoxDefinition(width=100, height=100))
     box.position = 100, 100
     return box
-
-
-def test_box_changing_rect(subtests, mock_gui):
-    """Test that the box position updates correctly when the rect is changed."""
-    box = make_dummy_box()
-
-    with subtests.test("Check position of box is set to origin of rect."):
-        assert box.position == (100, 100)
-
-    with subtests.test("When changing rect, position gets updated."):
-        box.rect = cocos.rect.Rect(50, 50, 100, 100)
-        assert box.position == (50, 50)
-        assert box.rect == cocos.rect.Rect(0, 0, 100, 100)
 
 
 def test_box_point_to_world(mock_gui):
@@ -87,6 +73,6 @@ def test_bounding_rect_of_boxes(mock_gui):
         box.position = 100 * i, 100 * i
         boxes.append(box)
 
-    rect = bounding_rect_of_boxes(boxes)
+    rect = bounding_rect_of_rects((box.world_rect for box in boxes))
 
     assert rect == cocos.rect.Rect(100, 100, 300, 300)

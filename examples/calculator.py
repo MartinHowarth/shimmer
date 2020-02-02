@@ -9,13 +9,10 @@ from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDe
 from shimmer.display.widgets.button import ButtonDefinition, Button
 from shimmer.display.widgets.window import WindowDefinition, Window
 from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
-from shimmer.display.data_structures import (
-    VerticalAlignment,
-    HorizontalAlignment,
-)
+from shimmer.display.alignment import LeftTop
 from shimmer.display.keyboard import (
     KeyboardActionDefinition,
-    KeyMap,
+    KeyboardHandlerDefinition,
     KeyboardHandler,
     ChordDefinition,
 )
@@ -66,11 +63,7 @@ class Calculator(Window):
 
         # Add the display and the buttons to the Window body with sensible alignment.
         self.add_child_to_body(
-            self.text_box,
-            align_x=HorizontalAlignment.left,
-            margin_x=self.margin,
-            align_y=VerticalAlignment.top,
-            margin_y=self.margin,
+            self.text_box, body_anchor=LeftTop, spacing=(self.margin, 0),
         )
         self.add_child_to_body(self.button_layout)
 
@@ -128,7 +121,7 @@ class Calculator(Window):
         """Update the calculator display."""
         self.text_box.text = self.calculation
 
-    def create_keymap(self) -> KeyMap:
+    def create_keymap(self) -> KeyboardHandlerDefinition:
         """
         Create an additional keymap for this calculator.
 
@@ -147,7 +140,7 @@ class Calculator(Window):
 
             return inner
 
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
 
         # Make the ENTER keys also trigger equals.
         keymap.add_keyboard_action(
@@ -183,9 +176,7 @@ def main():
     """Run the calculator program."""
     cocos.director.director.init()
     new_calculator_button = Button(
-        ButtonDefinition(
-            text="New Calculator", on_press=create_new_calculator, dynamic_size=True
-        )
+        ButtonDefinition(text="New Calculator", on_press=create_new_calculator)
     )
     new_calculator_button.position = (
         0,

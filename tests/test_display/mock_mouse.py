@@ -1,6 +1,7 @@
 """A mock mouse for use in testing."""
 
 from typing import Optional, Tuple
+
 from pyglet.window.mouse import LEFT
 
 from shimmer.display.components.box import Box

@@ -32,8 +32,8 @@ jobs:
         with:
           branch: master
           extra_plugins: |
-            @semantic-release/exec
-            @semantic-release/git
+            @semantic-release/exec@3.3.8
+            @semantic-release/git@7.0.18
             @semantic-release/changelog
         env:
           GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_GITHUB_TOKEN }}

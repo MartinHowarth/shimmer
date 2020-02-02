@@ -1,11 +1,12 @@
 """Module defining keyboard handlers."""
 
-import cocos
-
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from more_itertools import powerset
 from functools import reduce
+from typing import Optional, Callable, List, Dict, Iterable, Union
+
+from more_itertools import powerset
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 from pyglet.window.key import (
     symbol_string,
@@ -14,12 +15,13 @@ from pyglet.window.key import (
     MOD_CAPSLOCK,
     MOD_SCROLLLOCK,
 )
-from typing import Optional, Callable, List, Dict, Iterable, Union
 
+import cocos
 from .helpers import bitwise_add
 
-
 NO_MOD = 0
+
+log = logging.getLogger(__name__)
 
 
 def defaultdict_key_map() -> Dict[int, Dict[Union[int, str], List]]:
@@ -89,13 +91,10 @@ class KeyboardActionDefinition:
     Or it can be a single string character. This is useful when you want to distinguish
     between capital and lowercase letters without handling `MOD_SHIFT` yourself.
 
-    Note that for character (aka text) presses, on_press and on_release will be called
-    immediately - there is no "release" event for text.
-
-    Also note that text events may repeat rapidly if the user holds the key down.
+    Also note that text events may repeat if the user holds the key down, based on system settings.
 
     :param chords: List of ChordDefinitions or characters that can trigger the callbacks.
-    :param on_press: Called when one of the chords is pressed, or a character is pressed.
+    :param on_select: Called when one of the chords is pressed, or a character is pressed.
     :param on_release: Called when one of the chords is released, or a character is pressed.
     """
 
@@ -106,39 +105,49 @@ class KeyboardActionDefinition:
 
 
 @dataclass
-class KeyMap:
+class KeyboardHandlerDefinition:
     """
     Definition of mapping from keyboard inputs to handlers.
 
-    Stored in the `map` attribute in the following structure. This example shows
-    how the `a` key can have different effects depending on the modifier used.
+    :param key_map: Mapping from chords or characters to actions to take.
+        The following example shows how the `a` key can have different effects depending on
+        the modifier used.
 
-        map = {
-            NO_MOD = {
-                A = [KeyboardActionDefinition(on_press=do_one)],
+            map = {
+                NO_MOD = {
+                    A = [KeyboardActionDefinition(on_select=do_one)],
+                    ...
+                },
+                MOD_SHIFT = {
+                    A = [KeyboardActionDefinition(on_select=do_two)],
+                    ...
+                },
+                MOD_CTRL | MOD_SHIFT = {
+                    A = [KeyboardActionDefinition(on_select=do_three)],
+                    ...
+                },
                 ...
-            },
-            MOD_SHIFT = {
-                A = [KeyboardActionDefinition(on_press=do_two)],
-                ...
-            },
-            MOD_CTRL | MOD_SHIFT = {
-                A = [KeyboardActionDefinition(on_press=do_three)],
-                ...
-            },
-            ...
-        }
+            }
+    :param on_text: Called with the string representation of the keyboard press.
+    :param on_text_motion: Called with the pyglet representation of text motion.
+    :param on_text_motion_select: Called with the pyglet representation of text motion selection.
+    :param focus_required: If True, then this handler only responds to keyboard events
+        when it has keyboard focus (i.e. `has_keyboard_focus = True`).
     """
 
-    map: Dict[int, Dict[Union[int, str], List[KeyboardActionDefinition]]] = field(
+    key_map: Dict[int, Dict[Union[int, str], List[KeyboardActionDefinition]]] = field(
         default_factory=defaultdict_key_map
     )
+    on_text: Optional[Callable[[str], Optional[bool]]] = None
+    on_text_motion: Optional[Callable[[int], Optional[bool]]] = None
+    on_text_motion_select: Optional[Callable[[int], Optional[bool]]] = None
+    focus_required: bool = True
 
     def add_keyboard_action(self, keyboard_action: KeyboardActionDefinition) -> None:
         """Add a KeyboardActionDefinition to this keymap."""
         for chord in keyboard_action.chords:
             if isinstance(chord, str):
-                modifier_map = self.map[NO_MOD]
+                modifier_map = self.key_map[NO_MOD]
                 if keyboard_action not in modifier_map[chord]:
                     modifier_map[chord].append(keyboard_action)
             else:
@@ -147,7 +156,7 @@ class KeyMap:
                 # then the action will be found in the relevant combined modifier dict.
                 for mod_set in powerset(chord.ignore_modifiers):
                     modifiers = reduce(bitwise_add, (chord.modifiers, *mod_set))
-                    modifier_map = self.map[modifiers]
+                    modifier_map = self.key_map[modifiers]
                     if keyboard_action not in modifier_map[chord.key]:
                         modifier_map[chord.key].append(keyboard_action)
 
@@ -155,7 +164,7 @@ class KeyMap:
         """Remove a KeyboardActionDefinition from this keymap."""
         for chord in keyboard_action.chords:
             if isinstance(chord, str):
-                modifier_map = self.map[NO_MOD]
+                modifier_map = self.key_map[NO_MOD]
                 if keyboard_action in modifier_map[chord]:
                     modifier_map[chord].remove(keyboard_action)
             else:
@@ -163,30 +172,56 @@ class KeyMap:
                 # modifier and the ignore modifiers.
                 for mod_set in powerset(chord.ignore_modifiers):
                     modifiers = reduce(bitwise_add, (chord.modifiers, *mod_set))
-                    modifier_map = self.map[modifiers]
+                    modifier_map = self.key_map[modifiers]
                     if keyboard_action in modifier_map[chord.key]:
                         modifier_map[chord.key].remove(keyboard_action)
+
+    def add_keyboard_action_simple(
+        self,
+        key: Union[int, str],
+        action: Optional[Callable[[], Optional[bool]]],
+        modifiers: int = 0,
+    ) -> KeyboardActionDefinition:
+        """
+        Simplified version of `add_keyboard_action`.
+
+        Adds a single callback to occur on key press for the given key.
+
+        :param key: The pyglet keyboard key integer; or text character.
+        :param action: The function to call when the key is pressed.
+        :param modifiers: The pyglet keyboard modifier integer.
+        :return: The `KeyboardActionDefinition` created.
+        """
+        if isinstance(key, int):
+            definition = KeyboardActionDefinition(
+                chords=[ChordDefinition(key=key, modifiers=modifiers)], on_press=action,
+            )
+        else:
+            definition = KeyboardActionDefinition(chords=[key], on_press=action,)
+        self.add_keyboard_action(definition)
+        return definition
 
 
 class KeyboardHandler(cocos.cocosnode.CocosNode):
     """
     KeyboardHandler is a cocosnode that handles keyboard events.
 
-    The handler has reference to a KeyMap which defines what actions to take
+    The handler has reference to a KeyboardHandlerDefinition which defines what actions to take
     when keys (plus optional modifiers) are pressed or released.
 
     Multiple KeyboardHandlers can exist at once. They will receive keyboard events
     following the normal cocosnode event handler rules.
     """
 
-    def __init__(self, keymap: KeyMap):
+    def __init__(self, definition: KeyboardHandlerDefinition):
         """
         Create a new KeyboardHandler.
 
-        :param keymap: The definition of key to action mapping.
+        :param definition: The definition of key to action mapping.
         """
         super(KeyboardHandler, self).__init__()
-        self.keymap = keymap
+        self.has_keyboard_focus: bool = False
+        self.definition = definition
 
     def on_enter(self):
         """Called every time just before the node enters the stage."""
@@ -198,6 +233,19 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
         cocos.director.director.window.remove_handlers(self)
         super(KeyboardHandler, self).on_exit()
 
+    @property
+    def should_handle_keyboard_event(self) -> bool:
+        """Return True if this KeyboardHandler should handle keyboard events, otherwise False."""
+        return not self.definition.focus_required or self.has_keyboard_focus
+
+    def set_focused(self):
+        """Set this handler to be focused."""
+        self.has_keyboard_focus = True
+
+    def set_unfocused(self):
+        """Set this handler to not be focused."""
+        self.has_keyboard_focus = False
+
     def on_key_press(self, symbol: int, modifiers: int) -> Optional[bool]:
         """
         Called when the user presses a key.
@@ -208,13 +256,17 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
             See pyglet.window.key for key code definitions.
         :return: True if the event was handled by any KeyboardAction, otherwise None.
         """
+        if not self.should_handle_keyboard_event:
+            return EVENT_UNHANDLED
+
         results = []
-        modifier_map = self.keymap.map[modifiers]
+        modifier_map = self.definition.key_map[modifiers]
         for handler in modifier_map[symbol]:
             if handler.on_press is not None:
                 results.append(handler.on_press())
 
         if EVENT_HANDLED in results:
+            log.debug(f"on_key_press consumed by {self}")
             return EVENT_HANDLED
         return EVENT_UNHANDLED
 
@@ -228,19 +280,25 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
             See pyglet.window.key for key code definitions.
         :return: True if the event was handled by any KeyboardAction, otherwise None.
         """
+        if not self.should_handle_keyboard_event:
+            return EVENT_UNHANDLED
+
         results = []
-        modifier_map = self.keymap.map[modifiers]
+        modifier_map = self.definition.key_map[modifiers]
         for handler in modifier_map[symbol]:
             if handler.on_release is not None:
                 results.append(handler.on_release())
 
         if EVENT_HANDLED in results:
+            log.debug(f"on_key_release consumed by {self}")
             return EVENT_HANDLED
         return EVENT_UNHANDLED
 
     def on_text(self, text: str) -> Optional[bool]:
         """
-        Called when the user inputs some text.
+        Called with the character that the user pressed.
+
+        If `on_text` is set in the definition, that callback takes precedence over the keymap.
 
         This is called with the string representation of the key that was pressed,
         accounting for modifiers. For example, lowercase and capital letters are handled.
@@ -252,8 +310,17 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
         :param text: Single character string that was pressed.
         :return: True if the event was handled by any KeyboardAction, otherwise None.
         """
+        if not self.should_handle_keyboard_event:
+            return EVENT_UNHANDLED
+
+        if self.definition.on_text is not None:
+            result = self.definition.on_text(text)
+            if result is EVENT_HANDLED:
+                log.debug(f"on_text({text!r}) consumed by {self}")
+                return EVENT_HANDLED
+
         results = []
-        modifier_map = self.keymap.map[NO_MOD]
+        modifier_map = self.definition.key_map[NO_MOD]
         for handler in modifier_map[text]:
             if handler.on_press is not None:
                 results.append(handler.on_press())
@@ -261,5 +328,66 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
                 results.append(handler.on_release())
 
         if EVENT_HANDLED in results:
+            log.debug(f"on_text({text!r}) consumed by {self}")
+            return EVENT_HANDLED
+        return EVENT_UNHANDLED
+
+    def _should_handle_on_text_motion(self, motion: int) -> bool:
+        """
+        Determine if this Box should attempt to handle the mouse press event.
+
+        :param motion: Int indicating which text motion has occurred.
+        :return: True if this node should handle the text motion event.
+        """
+        return (
+            self.should_handle_keyboard_event
+            and self.definition.on_text_motion is not None
+        )
+
+    def _should_handle_on_text_motion_select(self, motion: int) -> bool:
+        """
+        Determine if this Box should attempt to handle the mouse press event.
+
+        :param motion: Int indicating which text motion has occurred.
+        :return: True if this node should handle the text motion select event.
+        """
+        return (
+            self.should_handle_keyboard_event
+            and self.definition.on_text_motion_select is not None
+        )
+
+    def on_text_motion(self, motion: int) -> Optional[bool]:
+        """
+        Called when text motion inputs are pressed.
+
+        This handles typical text motion combination inputs, such as ctrl+home.
+
+        See https://pyglet-current.readthedocs.io/en/latest/programming_guide/keyboard.html#motion-events.  # noqa
+
+        :param motion: The pyglet constant representing the text motion that occurred.
+        """
+        if not self._should_handle_on_text_motion(motion):
+            return EVENT_UNHANDLED
+
+        if self.definition.on_text_motion is not None:
+            self.definition.on_text_motion(motion)
+            return EVENT_HANDLED
+        return EVENT_UNHANDLED
+
+    def on_text_motion_select(self, motion: int) -> Optional[bool]:
+        """
+        Called when text motion inputs are pressed.
+
+        This handles typical text motion combination inputs, such as ctrl+home.
+
+        See https://pyglet-current.readthedocs.io/en/latest/programming_guide/keyboard.html#motion-events.  # noqa
+
+        :param motion: The pyglet constant representing the text motion that occurred.
+        """
+        if not self._should_handle_on_text_motion_select(motion):
+            return EVENT_UNHANDLED
+
+        if self.definition.on_text_motion_select is not None:
+            self.definition.on_text_motion_select(motion)
             return EVENT_HANDLED
         return EVENT_UNHANDLED

@@ -1,7 +1,8 @@
 """Pytest fixtures for programmable GUI components."""
 
-import pytest
 import time
+
+import pytest
 
 from shimmer.engine.programmable.definition import (
     CodeBlock,

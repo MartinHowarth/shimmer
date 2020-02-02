@@ -1,11 +1,9 @@
 """Methods to enable addition/removal of Boxes to other MouseBoxes on mouse events."""
 import logging
-
 from typing import Callable, Any
 
 from shimmer.display.components.box import Box
 from shimmer.display.components.mouse_box import MouseBox
-
 
 log = logging.getLogger(__name__)
 

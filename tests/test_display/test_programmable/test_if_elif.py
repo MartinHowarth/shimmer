@@ -1,18 +1,16 @@
 """Tests for the graphical display of If/Elif/Else code blocks."""
 
-import cocos
 import time
-
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
-from shimmer.engine.programmable.definition import If, IfElifElse
+import cocos
 from shimmer.display.programmable.if_elif import (
     InstructionWithBlockDisplay,
     IfElifElseDisplay,
     InstructionWithBlockDisplayDefinition,
 )
-
+from shimmer.engine.programmable.definition import If, IfElifElse
 from .conftest import return_false, return_true
 
 

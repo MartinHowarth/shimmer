@@ -1,10 +1,9 @@
 """Definition of a Box that tracks the cursor."""
 
-import cocos
-
 from dataclasses import dataclass
 from typing import Optional
 
+import cocos
 from shimmer.display.components.box import ActiveBox, BoxDefinition
 from shimmer.display.primitives import Point2d
 

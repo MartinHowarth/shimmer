@@ -1,8 +1,8 @@
 """Common fixtures to aid testing of widgets."""
 
-import pytest
-
 from typing import Tuple, Set, Callable
+
+import pytest
 
 from shimmer.display.widgets.question_definition import MultipleChoiceResponseCallback
 from shimmer.display.widgets.text_box import TextBox

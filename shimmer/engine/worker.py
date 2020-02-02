@@ -3,8 +3,8 @@
 import asyncio
 import logging
 
-from shimmer.engine.entity.entity import Entity
 from shimmer.engine.entity.definition import EntityDefinition
+from shimmer.engine.entity.entity import Entity
 from shimmer.engine.staged_entity.entity import StagedEntity
 
 log = logging.getLogger(__name__)

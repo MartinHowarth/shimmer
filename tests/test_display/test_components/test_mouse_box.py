@@ -5,8 +5,9 @@ Performs tests with a mock GUI to check event handling is correct.
 """
 
 from dataclasses import replace
-from mock import MagicMock
 from typing import no_type_check
+
+from mock import MagicMock
 
 from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
 
@@ -34,7 +35,7 @@ def test_all_callbacks_can_be_called(subtests, mock_gui, mock_mouse):
     # Set position to non-origin to make the test more realistic / interesting.
     box.position = 100, 100
 
-    with subtests.test("Test on_press callback."):
+    with subtests.test("Test on_select callback."):
         handled = mock_mouse.press(box)
         assert handled is True
         definition.on_press.assert_called_once()

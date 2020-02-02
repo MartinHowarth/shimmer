@@ -5,6 +5,10 @@ import logging
 from functools import update_wrapper
 from typing import Callable
 
+LTRACE: int = 5
+
+logging.addLevelName(LTRACE, "TRACE")
+
 
 def log_exceptions(logger: logging.Logger) -> Callable[[Callable], Callable]:
     """

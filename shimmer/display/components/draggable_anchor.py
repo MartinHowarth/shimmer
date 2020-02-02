@@ -1,7 +1,13 @@
 """Box that can be dragged, changing the position of it's parent as well."""
 
-from shimmer.display.components.box import BoxDefinition
-from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
+from typing import Optional
+
+from shimmer.display.components.box import Box, BoxDefinition
+from shimmer.display.components.mouse_box import (
+    MouseBox,
+    MouseBoxDefinition,
+    EVENT_HANDLED,
+)
 
 
 class DraggableAnchor(MouseBox):
@@ -34,9 +40,12 @@ class DraggableAnchor(MouseBox):
         """Should only handle drag is this anchor currently is being dragged."""
         return self._currently_dragging
 
-    def handle_drag(self, *_, dx=0, dy=0, **__):
+    def handle_drag(
+        self, box: Box, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int
+    ) -> Optional[bool]:
         """While the mouse is pressed on the area, keep updating the position."""
         new_parent_pos_x = self.parent.position[0] + dx
         new_parent_pos_y = self.parent.position[1] + dy
 
         self.parent.position = new_parent_pos_x, new_parent_pos_y
+        return EVENT_HANDLED

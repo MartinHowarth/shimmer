@@ -1,20 +1,17 @@
 """Module defining global pytest fixtures for GUI tests."""
 
-import cocos
 import os
-import pytest
-
 from typing import Callable, List, Tuple, Any
 
-from shimmer.display.data_structures import LabelDefinition
-from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
+import pytest
 
+import cocos
+from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
 from tests.test_display.mock_window import MockWindow
 from .interactive import PassOrFailInput, SimpleEventLayer
 from .mock_director import MockDirector
 from .mock_keyboard import MockKeyboard
 from .mock_mouse import MockMouse
-
 
 SKIP_GUI_TESTS = "SKIP_GUI_TESTS" in os.environ
 
@@ -73,7 +70,7 @@ def run_gui():
         children_layer = SimpleEventLayer(*children)
         children_layer.position = 50, 50
 
-        scene = cocos.scene.Scene(children_layer, input_handler)
+        scene = cocos.scene.Scene(input_handler, children_layer)
         cocos.director.director.run(scene)
         return input_handler.passed
 
@@ -91,9 +88,7 @@ def run_gui():
 @pytest.fixture
 def updatable_text_box() -> Tuple[TextBox, Callable[[Any], None]]:
     """Fixture to create a text box whose text can be updated using the given callback."""
-    text_box = TextBox(
-        TextBoxDefinition(label=LabelDefinition("<placeholder>", width=500))
-    )
+    text_box = TextBox(TextBoxDefinition(text="<placeholder>", width=500))
     text_box.position = 0, 300
 
     def update_text_box(text: Any) -> None:

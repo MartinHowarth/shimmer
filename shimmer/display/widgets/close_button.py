@@ -6,7 +6,6 @@ from shimmer.display.data_structures import Color
 from shimmer.display.helpers import bundle_callables
 from shimmer.display.widgets.button import ButtonDefinition, Button
 
-
 CloseButtonDefinitionBase = ButtonDefinition(
     text="X", base_color=Color(200, 0, 127), hover_color=Color(255, 0, 127)
 )

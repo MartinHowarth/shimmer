@@ -8,9 +8,11 @@ For example, this can be used to create:
 
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
-
 from typing import Set, Optional, Union, Dict, Any
 
+from shimmer.display.helpers import bundle_callables
+from .button import ButtonDefinition, ToggleButton
+from .question_definition import MultipleChoiceQuestionDefinition
 from ..components.box import Box, BoxDefinition
 from ..components.box_layout import (
     BoxColumn,
@@ -19,9 +21,6 @@ from ..components.box_layout import (
     BoxLayoutDefinition,
 )
 from ..components.mouse_box import MouseClickEventCallable
-from shimmer.display.helpers import bundle_callables
-from .button import ButtonDefinition, ToggleButton
-from .question_definition import MultipleChoiceQuestionDefinition
 
 
 @dataclass(frozen=True)
@@ -47,13 +46,13 @@ class MultipleChoiceButtons(Box):
         super(MultipleChoiceButtons, self).__init__(definition)
         self.definition: MultipleChoiceButtonsDefinition = definition
         self._layout: Optional[Union[BoxRow, BoxColumn]] = None
-        self._buttons: Dict[str, ToggleButton] = {}
-        self._current_selection: Dict[str, bool] = defaultdict(bool)
+        self._buttons: Dict[Union[str, Box], ToggleButton] = {}
+        self._current_selection: Dict[Union[str, Box], bool] = defaultdict(bool)
         self.update_layout()
         self.set_to_defaults()
 
     @property
-    def currently_selected(self) -> Set[str]:
+    def currently_selected(self) -> Set[Union[str, Box]]:
         """Return a list of the currently selected options."""
         return set(
             item[0]
@@ -62,7 +61,7 @@ class MultipleChoiceButtons(Box):
             )
         )
 
-    def set_to_defaults(self):
+    def set_to_defaults(self) -> None:
         """
         Set all toggle buttons to match the defined default state.
 
@@ -75,15 +74,17 @@ class MultipleChoiceButtons(Box):
                 button.is_toggled = False
 
     def _create_choice_callback_wrapper(
-        self, chosen: str, existing_on_press: Optional[MouseClickEventCallable]
+        self,
+        chosen: Union[str, Box],
+        existing_on_press: Optional[MouseClickEventCallable],
     ) -> MouseClickEventCallable:
         """
         Create callback to notify this multiple choice of a button press.
 
-        Also calls the existing on_press method if it exists.
+        Also calls the existing on_select method if it exists.
 
         :param chosen: The choice represented by the button.
-        :param existing_on_press: Optional on_press callback that already is defined on the button.
+        :param existing_on_press: Optional on_select callback that already is defined on the button.
         """
 
         def inner(box: ToggleButton, *_: Any, **__: Any) -> None:
@@ -95,7 +96,7 @@ class MultipleChoiceButtons(Box):
             return inner
 
     def _handle_button_select_or_deselect(
-        self, chosen: str, button: ToggleButton
+        self, chosen: Union[str, Box], button: ToggleButton
     ) -> None:
         """
         Called when a child button is selected.
@@ -123,9 +124,14 @@ class MultipleChoiceButtons(Box):
         """Create the set of buttons for each choice."""
         buttons = []
         for choice in self.definition.question.choices:
+            if isinstance(choice, str):
+                text = choice
+            else:
+                text = ""
+
             defn = replace(
                 self.definition.button,
-                text=choice,
+                text=text,
                 on_press=self._create_choice_callback_wrapper(
                     choice, self.definition.button.on_press
                 ),
@@ -133,7 +139,10 @@ class MultipleChoiceButtons(Box):
                     choice, self.definition.button.on_release
                 ),
             )
-            buttons.append(ToggleButton(defn))
+            button = ToggleButton(defn)
+            if isinstance(choice, Box):
+                button.add(choice, z=-100)
+            buttons.append(button)
         self._buttons = dict(zip(self.definition.question.choices, buttons))
         return buttons
 
@@ -143,5 +152,4 @@ class MultipleChoiceButtons(Box):
             self.remove(self._layout)
 
         self._layout = create_box_layout(self.definition.layout, self._create_buttons())
-        self.rect = self._layout.rect.copy()
         self.add(self._layout)

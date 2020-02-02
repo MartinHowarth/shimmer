@@ -1,9 +1,9 @@
 """Test the multiple choice button widget."""
 
-import pytest
-
 from dataclasses import replace
 from typing import Tuple
+
+import pytest
 
 from shimmer.display.data_structures import Color
 from shimmer.display.widgets.button import ButtonDefinition

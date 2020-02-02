@@ -1,15 +1,16 @@
 """Tests for the keyboard handler."""
 
+from typing import no_type_check
+
 from mock import MagicMock
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 from pyglet.window import key
-from typing import no_type_check
 
 from shimmer.display.helpers import bitwise_add
 from shimmer.display.keyboard import (
     ChordDefinition,
     KeyboardActionDefinition,
-    KeyMap,
+    KeyboardHandlerDefinition,
     KeyboardHandler,
     NO_MOD,
 )
@@ -32,7 +33,7 @@ def dummy_keyboard_handler():
     keyboard_action2 = KeyboardActionDefinition(
         chords=[b, shift_ctrl_a], on_press=MagicMock(), on_release=MagicMock()
     )
-    keymap = KeyMap()
+    keymap = KeyboardHandlerDefinition(focus_required=False)
     keymap.add_keyboard_action(keyboard_action)
     keymap.add_keyboard_action(keyboard_action1)
     keymap.add_keyboard_action(keyboard_action2)
@@ -75,35 +76,35 @@ def test_keymap_add_keyboard_action(subtests):
     )
 
     with subtests.test("Test adding an action with a single chord."):
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(chords=[a])
         keymap.add_keyboard_action(keyboard_action)
 
-        assert keymap.map == {NO_MOD: {key.A: [keyboard_action]}}
+        assert keymap.key_map == {NO_MOD: {key.A: [keyboard_action]}}
 
     with subtests.test(
         "Test adding an action with two chords using different modifiers."
     ):
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(chords=[shift_ctrl_a, shift_a])
         keymap.add_keyboard_action(keyboard_action)
 
-        assert keymap.map == {
+        assert keymap.key_map == {
             key.MOD_SHIFT: {key.A: [keyboard_action]},
             key.MOD_SHIFT | key.MOD_CTRL: {key.A: [keyboard_action]},
         }
 
     with subtests.test("Test adding an action with two chords using different keys."):
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(chords=[a, b])
         keymap.add_keyboard_action(keyboard_action)
 
-        assert keymap.map == {
+        assert keymap.key_map == {
             NO_MOD: {key.A: [keyboard_action], key.B: [keyboard_action]},
         }
 
     with subtests.test("Test adding an two actions with the same chord."):
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(chords=[a, b])
         # Include a dummy function definition otherwise the actions compare as identical.
         keyboard_action2 = KeyboardActionDefinition(
@@ -112,7 +113,7 @@ def test_keymap_add_keyboard_action(subtests):
         keymap.add_keyboard_action(keyboard_action)
         keymap.add_keyboard_action(keyboard_action2)
 
-        assert keymap.map == {
+        assert keymap.key_map == {
             NO_MOD: {
                 key.A: [keyboard_action, keyboard_action2],
                 key.B: [keyboard_action, keyboard_action2],
@@ -120,12 +121,12 @@ def test_keymap_add_keyboard_action(subtests):
         }
 
     with subtests.test("Test adding the same action a second time does nothing."):
-        keymap = KeyMap()
+        keymap = KeyboardHandlerDefinition()
         keyboard_action = KeyboardActionDefinition(chords=[a])
         keymap.add_keyboard_action(keyboard_action)
         keymap.add_keyboard_action(keyboard_action)
 
-        assert keymap.map == {
+        assert keymap.key_map == {
             NO_MOD: {key.A: [keyboard_action]},
         }
 
@@ -143,7 +144,7 @@ def test_keymap_remove_keyboard_action(subtests):
     keyboard_action2 = KeyboardActionDefinition(chords=[b, shift_ctrl_a])
 
     def make_keymap():
-        _keymap = KeyMap()
+        _keymap = KeyboardHandlerDefinition()
         _keymap.add_keyboard_action(keyboard_action)
         _keymap.add_keyboard_action(keyboard_action1)
         _keymap.add_keyboard_action(keyboard_action2)
@@ -152,7 +153,7 @@ def test_keymap_remove_keyboard_action(subtests):
     with subtests.test("Test removing an action with a single chord."):
         keymap = make_keymap()
         keymap.remove_keyboard_action(keyboard_action)
-        assert keymap.map == {
+        assert keymap.key_map == {
             NO_MOD: {key.A: [keyboard_action1], key.B: [keyboard_action2]},
             key.MOD_SHIFT: {key.A: [keyboard_action1]},
             key.MOD_SHIFT | key.MOD_CTRL: {key.A: [keyboard_action2]},
@@ -161,7 +162,7 @@ def test_keymap_remove_keyboard_action(subtests):
     with subtests.test("Test removing an action with multiple chords."):
         keymap = make_keymap()
         keymap.remove_keyboard_action(keyboard_action2)
-        assert keymap.map == {
+        assert keymap.key_map == {
             NO_MOD: {key.A: [keyboard_action, keyboard_action1], key.B: []},
             key.MOD_SHIFT: {key.A: [keyboard_action1]},
             key.MOD_SHIFT | key.MOD_CTRL: {key.A: []},
@@ -258,7 +259,7 @@ def test_key_handler_with_text_action(subtests, mock_gui, mock_keyboard):
     keyboard_action = KeyboardActionDefinition(
         chords=["a", "A"], on_press=MagicMock(), on_release=MagicMock()
     )
-    keymap = KeyMap()
+    keymap = KeyboardHandlerDefinition(focus_required=False)
     keymap.add_keyboard_action(keyboard_action)
     handler = KeyboardHandler(keymap)
 
@@ -287,7 +288,7 @@ def test_ignore_modifiers_with_no_modifier(subtests, mock_gui, mock_keyboard):
     keyboard_action = KeyboardActionDefinition(
         chords=[chord], on_press=MagicMock(), on_release=MagicMock()
     )
-    keymap = KeyMap()
+    keymap = KeyboardHandlerDefinition(focus_required=False)
     keymap.add_keyboard_action(keyboard_action)
     handler = KeyboardHandler(keymap)
 
@@ -328,7 +329,7 @@ def test_ignore_modifiers_with_modifier(subtests, mock_gui, mock_keyboard):
     keyboard_action = KeyboardActionDefinition(
         chords=[chord], on_press=MagicMock(), on_release=MagicMock()
     )
-    keymap = KeyMap()
+    keymap = KeyboardHandlerDefinition(focus_required=False)
     keymap.add_keyboard_action(keyboard_action)
     handler = KeyboardHandler(keymap)
 
@@ -369,7 +370,7 @@ def test_key_handler_return_handled(subtests, mock_gui, mock_keyboard):
     keyboard_action_other = KeyboardActionDefinition(
         chords=["b"], on_press=MagicMock(return_value=None)
     )
-    keymap = KeyMap()
+    keymap = KeyboardHandlerDefinition(focus_required=False)
     keymap.add_keyboard_action(keyboard_action_handled)
     keymap.add_keyboard_action(keyboard_action_unhandled)
     keymap.add_keyboard_action(keyboard_action_other)

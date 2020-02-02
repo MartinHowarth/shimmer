@@ -1,17 +1,16 @@
 """Module defining ways for users to draw shapes."""
 
-import cocos
-import pyglet
-
 from abc import ABC
-from cocos.euclid import Point2, Vector2
-
 from dataclasses import dataclass, replace
 from typing import Dict, Callable, Optional, Tuple
 
-from ..data_structures import ActiveGreen, Color
-from ..components.box import BoxDefinition
+import pyglet
+
+import cocos
+from cocos.euclid import Point2, Vector2
 from .mouse_box import MouseBox, MouseBoxDefinition
+from ..components.box import BoxDefinition
+from ..data_structures import ActiveGreen, Color
 
 
 # Deliberately not frozen so we can update it as the rect is drawn.
