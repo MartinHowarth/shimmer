@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/MartinHowarth/shimmer/compare/1.1.0...1.2.0) (2020-02-06)
+
+
+### Features
+
+* Add letter shooter example game. ([#86](https://github.com/MartinHowarth/shimmer/issues/86)) ([501ac55](https://github.com/MartinHowarth/shimmer/commit/501ac55bbce4d5ee1d66bcff1e6931dd59ace5cf))
+
 # [1.1.0](https://github.com/MartinHowarth/shimmer/compare/1.0.0...1.1.0) (2020-02-02)
 
 
