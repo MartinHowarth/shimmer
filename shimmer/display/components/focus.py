@@ -12,7 +12,7 @@ with.
 
 import logging
 from dataclasses import dataclass, replace, field
-from typing import List, Optional, Callable, Type, cast
+from typing import List, Optional, Callable, Type
 
 import cocos
 from .box import Box
@@ -127,11 +127,17 @@ class FocusBoxDefinition(MouseBoxDefinition):
 
     :param on_take_focus: Called when the FocusBox gains focus.
     :param on_lose_focus: Called when the FocusBox loses focus.
+    :param focus_on_click: If True then focus is gained when the Box is clicked on, and lost when
+        a click occurs outside of the box.
+    :param focus_on_hover: If True then focus is gained when the Box is hovered over, and lost when
+        the cursor leaves the box.
     :param focus_stack: The focus stack to use. Defaults to the global singleton.
     """
 
     on_take_focus: Optional[Callable[[], None]] = None
     on_lose_focus: Optional[Callable[[], None]] = None
+    focus_on_click: bool = True
+    focus_on_hover: bool = False
     focus_stack: _FocusStackHandler = field(default=FocusStackHandler)
 
 
@@ -146,9 +152,16 @@ class FocusBox(MouseBox):
 
         :param definition: BoxDefinition defining the shape of the focus box.
         """
-        definition = replace(
-            definition, on_press=self.on_click, on_press_outside=self.on_click_outside
-        )
+        if definition.focus_on_click:
+            definition = replace(
+                definition,
+                on_press=self.on_click,
+                on_press_outside=self.on_click_outside,
+            )
+        if definition.focus_on_hover:
+            definition = replace(
+                definition, on_hover=self.on_hover, on_unhover=self.on_unhover
+            )
         super(FocusBox, self).__init__(definition)
         self.definition: FocusBoxDefinition = self.definition
         self._is_focused: bool = False
@@ -229,29 +242,23 @@ class FocusBox(MouseBox):
         self.lose_focus()
         return EVENT_UNHANDLED
 
+    def on_hover(
+        self, box: "MouseBox", x: int, y: int, dx: int, dy: int
+    ) -> Optional[bool]:
+        """Take focus when this Box is hovered over."""
+        self.take_focus()
+        return EVENT_UNHANDLED
 
-@dataclass(frozen=True)
-class KeyboardFocusBoxDefinition(FocusBoxDefinition):
-    """
-    Definition of a FocusBox that focuses and associated KeyboardHandler when it is focused.
-
-    This allows for a Box (and its children) to selectively receive keyboard events depending
-    on whether they are focused or not.
-
-    :param keyboard_handler: The KeyboardHandler to control the focus state of.
-        If None, then a keyboard handler that is a sibling of this node will be used.
-    """
-
-    keyboard_handler: Optional[KeyboardHandler] = None
+    def on_unhover(
+        self, box: "MouseBox", x: int, y: int, dx: int, dy: int
+    ) -> Optional[bool]:
+        """Lose focus when the cursor leaves the Box."""
+        self.lose_focus()
+        return EVENT_UNHANDLED
 
 
 class KeyboardFocusBox(FocusBox):
     """A mouse box that when clicked causes its parent to take precedence on keyboard events."""
-
-    def __init__(self, definition: KeyboardFocusBoxDefinition):
-        """Create a new KeyboardFocusBox."""
-        super(KeyboardFocusBox, self).__init__(definition)
-        self.definition = cast(KeyboardFocusBoxDefinition, self.definition)
 
     @staticmethod
     def _set_focused_if_is_keyboard_handler(node: cocos.cocosnode.CocosNode) -> None:
@@ -322,8 +329,7 @@ class VisualAndKeyboardFocusBox(KeyboardFocusBox):
 
 def make_focusable(
     box: Box,
-    on_take_focus: Optional[Callable[[], None]] = None,
-    on_lose_focus: Optional[Callable[[], None]] = None,
+    definition: Optional[FocusBoxDefinition] = None,
     focus_type: Type[FocusBox] = VisualAndKeyboardFocusBox,
 ) -> FocusBox:
     """
@@ -332,18 +338,19 @@ def make_focusable(
     This adds a FocusBox of the same size as the given Box to the Box.
 
     :param box: Box to make focusable.
-    :param on_take_focus: Called with no arguments when the given box gains focus.
-    :param on_lose_focus: Called with no arguments when the given box loses focus.
-    :param focus_type: The type of focus box to use. Defaults to VisualAndKeyboardFocus.
+    :param definition: Definition of the FocusBox to create. If None then a basic focus box is
+        created.
+    :param focus_type: The type of focus box to create. Defaults to VisualAndKeyboardFocus.
     :return: Returns the FocusBox that was created.
     """
-    defn = KeyboardFocusBoxDefinition(
-        width=box.definition.width,
-        height=box.definition.height,
-        on_take_focus=on_take_focus,
-        on_lose_focus=on_lose_focus,
+    if definition is None:
+        definition = FocusBoxDefinition()
+
+    definition = replace(
+        definition, width=box.definition.width, height=box.definition.height,
     )
-    focus_box = focus_type(defn)
+
+    focus_box = focus_type(definition)
     # Add the focus box as the last child so that its event handlers get pushed first.
     # Use z=10000 as this should be high enough to make sure that the FocusBox is always the first
     # child without having to keep moving it up the stack if another child with a higher z value

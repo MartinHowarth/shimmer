@@ -110,6 +110,9 @@ class KeyboardHandlerDefinition:
     Definition of mapping from keyboard inputs to handlers.
 
     :param key_map: Mapping from chords or characters to actions to take.
+        Note that it is probably easier to build the key_map using the methods on this definition,
+        such as `add_keyboard_action`, rather than building it yourself.
+
         The following example shows how the `a` key can have different effects depending on
         the modifier used.
 
@@ -179,7 +182,7 @@ class KeyboardHandlerDefinition:
     def add_keyboard_action_simple(
         self,
         key: Union[int, str],
-        action: Optional[Callable[[], Optional[bool]]],
+        action: Callable[[], Optional[bool]],
         modifiers: int = 0,
     ) -> KeyboardActionDefinition:
         """
@@ -391,3 +394,25 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
             self.definition.on_text_motion_select(motion)
             return EVENT_HANDLED
         return EVENT_UNHANDLED
+
+
+def add_simple_keyboard_handler(
+    parent: cocos.cocosnode.CocosNode,
+    key: Union[int, str],
+    action: Callable[[], Optional[bool]],
+) -> KeyboardHandler:
+    """
+    Add a simple keyboard handler to the given parent.
+
+    This allows the node to trigger the given action when the given key is pressed, regardless
+    of which keyboard modifiers are currently pressed.
+
+    This requires that the parent has been made focusable because this is intended to add a
+    node-specific keyboard action, rather than a global action. This can be done by either adding
+    a FocusBox to the parent or using the simpler `make_focusable` method.
+    """
+    keyboard_handler_definition = KeyboardHandlerDefinition(focus_required=True)
+    keyboard_handler_definition.add_keyboard_action_simple(key, action)
+    keyboard_handler = KeyboardHandler(keyboard_handler_definition)
+    parent.add(keyboard_handler)
+    return keyboard_handler

@@ -7,7 +7,6 @@ from shimmer.display.components.box import Box
 from shimmer.display.components.focus import (
     FocusBox,
     VisualAndKeyboardFocusBox,
-    KeyboardFocusBoxDefinition,
     _FocusStackHandler,
     FocusBoxDefinition,
 )
@@ -21,10 +20,8 @@ def make_focus_box_pair() -> Tuple[
     parent = Box()
     parent_parent = Box()
     parent_parent.add(parent)
-    focus_box = VisualAndKeyboardFocusBox(KeyboardFocusBoxDefinition(focus_stack=stack))
-    focus_box2 = VisualAndKeyboardFocusBox(
-        KeyboardFocusBoxDefinition(focus_stack=stack)
-    )
+    focus_box = VisualAndKeyboardFocusBox(FocusBoxDefinition(focus_stack=stack))
+    focus_box2 = VisualAndKeyboardFocusBox(FocusBoxDefinition(focus_stack=stack))
 
     parent.add(focus_box)
     parent.add(focus_box2)

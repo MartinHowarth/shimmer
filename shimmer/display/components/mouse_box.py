@@ -228,6 +228,7 @@ class MouseBox(ActiveBox):
         Calls the `on_hover` callback from the definition, passing information about the event to
         the callback.
         """
+        log.debug(f"Now hovering over {self}.")
         self._currently_hovered = True
 
         if self.definition.on_hover is None:
@@ -254,6 +255,7 @@ class MouseBox(ActiveBox):
         Calls the `on_unhover` callback from the definition, passing information about the event to
         the callback.
         """
+        log.debug(f"No longer hovering over {self}.")
         # reset knowledge of which mouse buttons are pressed when mouse leaves the button.
         self._currently_pressed = 0
         self._currently_hovered = False

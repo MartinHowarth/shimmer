@@ -10,7 +10,7 @@ from pyglet import gl
 import cocos
 from ..alignment import HorizontalAlignment, LeftBottom
 from ..components.box import Box, bounding_rect_of_rects
-from ..components.focus import make_focusable, KeyboardFocusBox
+from ..components.focus import KeyboardFocusBox, FocusBoxDefinition, make_focusable
 from ..components.font import FontDefinition, Calibri
 from ..components.mouse_box import (
     MouseBox,
@@ -216,11 +216,11 @@ class EditableTextBox(MouseBox):
         )
         self.add(self._keyboard_handler)
 
-        # Make focusable after super so that cocosnode is initialised.
         self.focus_box = make_focusable(
             self,
-            on_take_focus=self.take_focus,
-            on_lose_focus=self.lose_focus,
+            FocusBoxDefinition(
+                on_take_focus=self.take_focus, on_lose_focus=self.lose_focus,
+            ),
             focus_type=KeyboardFocusBox,
         )
 

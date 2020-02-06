@@ -1,21 +1,21 @@
 """Example of a simple calculator written using shimmer."""
 
-import cocos
-
-from pyglet.window import key
 from typing import Optional, List, Callable
 
-from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDefinition
-from shimmer.display.widgets.button import ButtonDefinition, Button
-from shimmer.display.widgets.window import WindowDefinition, Window
-from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
+from pyglet.window import key
+
+import cocos
 from shimmer.display.alignment import LeftTop
+from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDefinition
 from shimmer.display.keyboard import (
     KeyboardActionDefinition,
     KeyboardHandlerDefinition,
     KeyboardHandler,
     ChordDefinition,
 )
+from shimmer.display.widgets.button import ButtonDefinition, Button
+from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
+from shimmer.display.widgets.window import WindowDefinition, Window
 
 
 class Calculator(Window):
