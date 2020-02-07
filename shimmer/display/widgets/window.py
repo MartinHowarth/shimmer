@@ -10,7 +10,7 @@ from ..alignment import (
     CenterTop,
 )
 from ..components.box import Box, BoxDefinition, ActiveBox
-from ..components.draggable_anchor import DraggableAnchor
+from ..components.draggable_box import DraggableBox, DraggableBoxDefinition
 from ..components.focus import make_focusable
 from ..components.font import FontDefinition, Calibri
 from ..components.mouse_box import (
@@ -225,11 +225,11 @@ class Window(ActiveBox):
         This creates a draggable area of the window covering the entire title bar to the left of
         the leftmost title bar button.
         """
-        drag_anchor_definition = BoxDefinition(
+        drag_box_definition = DraggableBoxDefinition(
             width=self.rect.width - self._leftmost_title_bar_button_position,
             height=self.title_bar_height,
         )
-        self._update_title_bar_box("drag", DraggableAnchor(drag_anchor_definition))
+        self._update_title_bar_box("drag", DraggableBox(drag_box_definition))
         self._title_boxes["drag"].position = 0, self.rect.height - self.title_bar_height
 
     def _update_title_bar_box(self, name: str, box: Box) -> None:

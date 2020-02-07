@@ -5,8 +5,10 @@ from dataclasses import dataclass, replace
 from typing import Optional
 
 import cocos
-from shimmer.display.components.box import BoxDefinition
-from shimmer.display.components.draggable_anchor import DraggableAnchor
+from shimmer.display.components.draggable_box import (
+    DraggableBox,
+    DraggableBoxDefinition,
+)
 from shimmer.display.data_structures import Color, ActiveGreen
 from shimmer.display.primitives import create_color_rect
 from shimmer.display.widgets.button import ButtonDefinition, Button
@@ -59,7 +61,7 @@ class InstructionDisplay(Button):
         self.instruction.on_execute_start = self.show_mask
         self.instruction.on_execute_complete = self.hide_mask
 
-        self.drag_anchor: Optional[DraggableAnchor] = None
+        self.drag_anchor: Optional[DraggableBox] = None
         self.executing_mask: Optional[cocos.layer.ColorLayer] = None
 
         super(InstructionDisplay, self).__init__(definition)
@@ -95,8 +97,8 @@ class InstructionDisplay(Button):
             self.drag_anchor = None
             return
 
-        self.drag_anchor = DraggableAnchor(
-            BoxDefinition(
+        self.drag_anchor = DraggableBox(
+            DraggableBoxDefinition(
                 width=self.definition.draggable_width, height=self.rect.height
             )
         )

@@ -134,7 +134,7 @@ class MouseBox(ActiveBox):
     this is because it is impossible to define a generic behaviour that works for all situations.
     Therefore, you should call `start_dragging` and `stop_dragging` respectively when required.
 
-    See `DraggableAnchor` for an example.
+    See `DraggableBox` for an example.
     """
 
     definition_type = MouseBoxDefinition

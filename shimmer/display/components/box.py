@@ -259,6 +259,44 @@ class Box(cocos.cocosnode.CocosNode):
         """
         return anchor.get_coord_in_rect(self._width, self._height)
 
+    def vector_between_anchors(
+        self,
+        other: "Box",
+        other_anchor: PositionalAnchor,
+        self_anchor: PositionalAnchor,
+    ) -> cocos.draw.Vector2:
+        """
+        Get the vector between the anchor of this box, and the anchor of the other box.
+
+        See `align_anchor_with_other_anchor` for argument descriptions.
+        """
+        if not self.is_running:
+            # We need to work in a common coordinate space. The easiest choice is the director.
+            # We could check for the director as an ancestor; but it is sufficient to check that
+            # the Box is running (i.e. in the current scene).
+            #
+            # If this Box is not in the scene, then we cannot calculate relative positioning
+            # reliably. However, it still works accurately for Boxes that are being aligned
+            # with their parent or with siblings. Therefore only log rather than error out.
+            log.debug(
+                f"This Box is not in the scene, "
+                f"so setting relative positioning may by unstable. {self=}, {other=}"
+            )
+
+        # Get the anchor coordinates in each Boxes coordinate space.
+        self_point = self.get_coordinates_of_anchor(self_anchor)
+        other_point = other.get_coordinates_of_anchor(other_anchor)
+
+        # Translate those coordinates into the world coordinate space to ensure a common
+        # coordinate space.
+        self_world_point = self.point_to_world(self_point)
+        other_world_point = other.point_to_world(other_point)
+
+        # Get the difference between those two points in world space, which is the amount we need
+        # to translate this Box by to align the two anchors.
+        anchor_vector = other_world_point - self_world_point
+        return anchor_vector
+
     def align_anchor_with_other_anchor(
         self,
         other: "Box",
@@ -285,34 +323,10 @@ class Box(cocos.cocosnode.CocosNode):
                 while negative integers serve to cause the Box edges to overlap.
             If a Tuple[int, int] is given, then it is treated as an exact (x, y) offset.
         """
-        if not self.is_running:
-            # We need to work in a common coordinate space. The easiest choice is the director.
-            # We could check for the director as an ancestor; but it is sufficient to check that
-            # the Box is running (i.e. in the current scene).
-            #
-            # If this Box is not in the scene, then we cannot calculate relative positioning
-            # reliably. However, it still works accurately for Boxes that are being aligned
-            # with their parent or with siblings. Therefore only log rather than error out.
-            log.debug(
-                f"This Box is not in the scene, "
-                f"so setting relative positioning may by unstable. {self=}, {other=}"
-            )
-
         if self_anchor is None:
             self_anchor = other_anchor
 
-        # Get the anchor coordinates in each Boxes coordinate space.
-        self_point = self.get_coordinates_of_anchor(self_anchor)
-        other_point = other.get_coordinates_of_anchor(other_anchor)
-
-        # Translate those coordinates into the world coordinate space to ensure a common
-        # coordinate space.
-        self_world_point = self.point_to_world(self_point)
-        other_world_point = other.point_to_world(other_point)
-
-        # Get the difference between those two points in world space, which is the amount we need
-        # to translate this Box by to align the two anchors.
-        anchor_vector = other_world_point - self_world_point
+        anchor_vector = self.vector_between_anchors(other, other_anchor, self_anchor)
 
         # Now account for spacing.
         # If the spacing is an integer, then it is applied in the direction defined from
