@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/MartinHowarth/shimmer/compare/1.2.0...1.3.0) (2020-02-07)
+
+
+### Features
+
+* Add snap-to-box behaviour for draggable boxes. ([#87](https://github.com/MartinHowarth/shimmer/issues/87)) ([9a4dfff](https://github.com/MartinHowarth/shimmer/commit/9a4dfff1cccccfd2f75cd6f86e8e5d1cac96505a)), closes [#26](https://github.com/MartinHowarth/shimmer/issues/26)
+
 # [1.2.0](https://github.com/MartinHowarth/shimmer/compare/1.1.0...1.2.0) (2020-02-06)
 
 
