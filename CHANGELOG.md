@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/MartinHowarth/shimmer/compare/1.3.0...1.4.0) (2020-02-22)
+
+
+### Features
+
+* [#77](https://github.com/MartinHowarth/shimmer/issues/77) improved drag and drop ([#88](https://github.com/MartinHowarth/shimmer/issues/88)) ([c2d9071](https://github.com/MartinHowarth/shimmer/commit/c2d9071aef5a831d43821a273d539c428cd0e65a))
+
 # [1.3.0](https://github.com/MartinHowarth/shimmer/compare/1.2.0...1.3.0) (2020-02-07)
 
 
