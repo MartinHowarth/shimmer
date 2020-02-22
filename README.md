@@ -1,7 +1,11 @@
 Shimmer
 -------
 
-![badge](https://github.com/MartinHowarth/shimmer/workflows/Test/badge.svg)
+<a href="https://github.com/MartinHowarth/shimmer/actions"><img alt="Actions Status" src="https://github.com/MartinHowarth/shimmer/workflows/Test/badge.svg"></a>
+<a href="https://github.com/MartinHowarth/shimmer/blob/master/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/MartinHowarth/shimmer"></a>
+<a href="https://pypi.org/project/shimmer/"><img alt="PyPI" src="https://img.shields.io/pypi/v/shimmer"></a>
+<a href="https://pepy.tech/project/shimmer"><img alt="Downloads" src="https://pepy.tech/badge/shimmer"></a>
+<a href="https://github.com/MartinHowarth/shimmer"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 Hello!
 
