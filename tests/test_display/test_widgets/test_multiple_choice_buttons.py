@@ -11,10 +11,8 @@ from shimmer.display.widgets.multiple_choice_buttons import (
     MultipleChoiceButtonsDefinition,
     MultipleChoiceButtons,
 )
-from shimmer.display.widgets.question_definition import (
-    MultipleChoiceQuestionDefinition,
-    MultipleChoiceResponseCallback,
-)
+from shimmer.display.widgets.question_definition import MultipleChoiceQuestionDefinition
+from shimmer.display.widgets.question_definition import OnQuestionChangeCallback
 from shimmer.display.widgets.text_box import TextBox
 
 
@@ -26,17 +24,17 @@ def dummy_button_definition() -> ButtonDefinition:
 
 @pytest.fixture
 def dummy_multi_choice(
-    multi_choice_result_display: Tuple[TextBox, MultipleChoiceResponseCallback],
+    question_result_display: Tuple[TextBox, OnQuestionChangeCallback],
 ) -> Tuple[TextBox, MultipleChoiceQuestionDefinition]:
     """
     Common multiple choice question definition to use in this test.
 
     Also returns a text box that updates to shown the current question response.
     """
-    text_box, update_text_box = multi_choice_result_display
+    text_box, update_text_box = question_result_display
 
     question_defn = MultipleChoiceQuestionDefinition(
-        text="", choices=["1", "2", "3"], on_select=update_text_box
+        text="", choices=["1", "2", "3"], on_change=update_text_box
     )
     return text_box, question_defn
 

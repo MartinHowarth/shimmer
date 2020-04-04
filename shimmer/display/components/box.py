@@ -6,6 +6,7 @@ A Box is a CocosNode that defines an area.
 
 import logging
 from dataclasses import dataclass, fields, replace
+from enum import Enum, auto
 from typing import Optional, Type, Iterable, Tuple, Union
 
 import cocos
@@ -20,15 +21,29 @@ from ..primitives import create_color_rect
 log = logging.getLogger(__name__)
 
 
+class DynamicSizeBehaviourEnum(Enum):
+    """
+    Enum of options for dynamically sized boxes.
+
+    fit_children - Box size encompasses all of its children in both dimensions.
+    match_parent - Box size matches parent size.
+    """
+
+    fit_children = auto()
+    match_parent = auto()
+
+
 @dataclass(frozen=True)
 class BoxDefinition:
     """Common definition to all Boxes."""
 
-    # If either `width` or `height` are None then the box size will dynamically encompass all of
-    # its children in the both dimensions.
+    # If either `width` or `height` are None then the box size will be set dynamically
+    # based on the value of `dynamic_size_behaviour`.
     # Set to 0 to match the entire window size.
     width: Optional[int] = None
     height: Optional[int] = None
+
+    dynamic_size_behaviour: DynamicSizeBehaviourEnum = DynamicSizeBehaviourEnum.fit_children
 
     background_color: Optional[Color] = None
 
@@ -47,9 +62,29 @@ class BoxDefinition:
         return f"{self.__class__.__name__}({params})"
 
     @property
+    def is_dynamic_width(self) -> bool:
+        """True if the defined Box should have dynamic width, otherwise False."""
+        return self.width is None
+
+    @property
+    def is_dynamic_height(self) -> bool:
+        """True if the defined Box should have dynamic height, otherwise False."""
+        return self.height is None
+
+    @property
     def is_dynamic_sized(self) -> bool:
         """True if the defined Box should have dynamic size, otherwise False."""
-        return self.width is None or self.height is None
+        return self.is_dynamic_width or self.is_dynamic_height
+
+    @property
+    def size_matches_parent(self) -> bool:
+        """True if the defined Box should match the size of its parent, otherwise False."""
+        return self.dynamic_size_behaviour == DynamicSizeBehaviourEnum.match_parent
+
+    @property
+    def size_fits_children(self) -> bool:
+        """True if the defined Box should match the size of its children, otherwise False."""
+        return self.dynamic_size_behaviour == DynamicSizeBehaviourEnum.fit_children
 
 
 class Box(cocos.cocosnode.CocosNode):
@@ -64,9 +99,11 @@ class Box(cocos.cocosnode.CocosNode):
             definition = self.definition_type()
 
         self.definition = definition
-        self._width: int = self.definition.width or 0
-        self._height: int = self.definition.height or 0
+        self._width: int = 0
+        self._height: int = 0
+        self._calculate_current_size()
         self._rect = cocos.rect.Rect(0, 0, self._width, self._height)
+
         self._background: Optional[cocos.layer.ColorLayer] = None
         self.update_background()
 
@@ -102,20 +139,51 @@ class Box(cocos.cocosnode.CocosNode):
             *self.point_to_world((0, 0)), self.rect.width, self.rect.height
         )
 
+    def _calculate_current_size(self) -> None:
+        """
+        Calculate what the size of this box should be.
+
+        This takes into account any dynamic settings in the definition.
+
+        This updates `self._width` and `self._height`, but does not change `self.rect`.
+        """
+        if not self.definition.is_dynamic_sized:
+            self._width = self.definition.width or 0
+            self._height = self.definition.height or 0
+        else:
+            if self.definition.size_fits_children:
+                dynamic_rect = self.bounding_rect_of_children()
+            elif self.definition.size_matches_parent:
+                if self.parent is not None and isinstance(self.parent, Box):
+                    dynamic_rect = self.parent.rect
+                else:
+                    log.debug(f"Cannot match size to non-existent or non-Box parent.")
+                    dynamic_rect = cocos.rect.Rect(0, 0, 0, 0)
+            else:
+                raise ValueError(
+                    f"{self.definition.dynamic_size_behaviour} "
+                    f"must be a member of `DynamicSizeBehaviourEnum`."
+                )
+
+            if self.definition.is_dynamic_width:
+                self._width = dynamic_rect.width
+            else:
+                self._width = self.definition.width or 0
+
+            if self.definition.is_dynamic_height:
+                self._height = dynamic_rect.height
+            else:
+                self._height = self.definition.height or 0
+
     def update_rect(self):
         """
         Update the cached rect definition.
 
         If the rect size changes, then `on_size_change` will be called.
         """
-        if self.definition.is_dynamic_sized:
-            children_rect = self.bounding_rect_of_children()
-            self._width = children_rect.width
-            self._height = children_rect.height
-        else:
-            self._width = self.definition.width or 0
-            self._height = self.definition.height or 0
+        self._calculate_current_size()
 
+        # If the new size is different to the old size, then handle size change.
         if self._width != self._rect.width or self._height != self._rect.height:
             self._rect.set_size((self._width, self._height))
             self.on_size_change()
@@ -124,11 +192,33 @@ class Box(cocos.cocosnode.CocosNode):
         """
         Called when the size of the Box changes.
 
-        Only applicable for dynamically sized Boxes.
+        Called automatically for dynamically sized Boxes when its children change size.
 
-        Called when `update_rect` detects a size change.
+        For manually resized boxes, `update_rect` should be called first, which will trigger this
+        function.
         """
         self.update_background()
+        if isinstance(self.parent, Box):
+            self.parent.on_child_size_changed()
+        for child in self.get_children():
+            if isinstance(child, Box):
+                child.on_parent_size_changed()
+
+    def on_child_size_changed(self):
+        """
+        Called when a child of this Box changes size.
+
+        Triggers this Box to update its size if it is dynamically sized.
+        """
+        self.update_rect()
+
+    def on_parent_size_changed(self):
+        """
+        Called when the parent of this Box changes size.
+
+        Triggers this Box to update its size if it is dynamically sized.
+        """
+        self.update_rect()
 
     def add(
         self,
@@ -150,6 +240,10 @@ class Box(cocos.cocosnode.CocosNode):
         super(Box, self).add(child, z, name)
         if self.definition.is_dynamic_sized and not no_resize:
             self.update_rect()
+
+        for child in self.get_children():
+            if isinstance(child, Box):
+                child.on_parent_size_changed()
 
     def remove(self, child: cocos.cocosnode.CocosNode, no_resize: bool = False) -> None:
         """
@@ -361,7 +455,14 @@ class Box(cocos.cocosnode.CocosNode):
             node: cocos.cocosnode.CocosNode,
         ) -> Optional[cocos.rect.Rect]:
             if isinstance(node, Box) and node is not self:
-                return node.world_rect
+                node_rect = node.world_rect
+                # If the box dynamically matches parent, then ignore the size of it.
+                if node.definition.size_matches_parent:
+                    if node.definition.is_dynamic_width:
+                        node_rect.width = 0
+                    if node.definition.is_dynamic_height:
+                        node_rect.height = 0
+                return node_rect
             return None
 
         world_rects = list(filter(lambda x: x is not None, self.walk(get_world_rect)))

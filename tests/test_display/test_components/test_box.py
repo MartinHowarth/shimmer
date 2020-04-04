@@ -6,7 +6,12 @@ Performs tests with a mock GUI to check event handling is correct.
 
 import cocos
 from shimmer.display.alignment import ZIndexEnum
-from shimmer.display.components.box import Box, BoxDefinition, bounding_rect_of_rects
+from shimmer.display.components.box import (
+    Box,
+    BoxDefinition,
+    bounding_rect_of_rects,
+    DynamicSizeBehaviourEnum,
+)
 
 
 def make_dummy_box() -> Box:
@@ -76,3 +81,146 @@ def test_bounding_rect_of_boxes(mock_gui):
     rect = bounding_rect_of_rects((box.world_rect for box in boxes))
 
     assert rect == cocos.rect.Rect(100, 100, 300, 300)
+
+
+def test_dynamic_width_fit_children(mock_gui, subtests):
+    """Test box dynamic width resizing."""
+    box = Box(
+        BoxDefinition(
+            width=None,
+            height=100,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children,
+        )
+    )
+    child = Box(BoxDefinition(width=100, height=1000))
+    child2 = Box(BoxDefinition(width=500, height=1000))
+
+    with subtests.test("Test that fit_children defaults sensibly with no children."):
+        assert box.rect == cocos.rect.Rect(0, 0, 0, 100)
+
+    with subtests.test("Test that adding a child automatically resizes the parent."):
+        box.add(child)
+        # Only the width should update to fit the child; not the height.
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 100)
+
+    with subtests.test(
+        "Test that adding a second child automatically resizes the parent."
+    ):
+        box.add(child2)
+        assert box.rect == cocos.rect.Rect(0, 0, 500, 100)
+
+    with subtests.test("Test that removing a child automatically resizes the parent."):
+        box.remove(child2)
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 100)
+
+    with subtests.test(
+        "Test that removing all children automatically resizes the parent."
+    ):
+        box.remove(child)
+        assert box.rect == cocos.rect.Rect(0, 0, 0, 100)
+
+
+def test_dynamic_height_fit_children(mock_gui, subtests):
+    """Test box dynamic height resizing."""
+    box = Box(
+        BoxDefinition(
+            width=100,
+            height=None,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children,
+        )
+    )
+    child = Box(BoxDefinition(width=1000, height=100))
+    child2 = Box(BoxDefinition(width=1000, height=500))
+
+    with subtests.test("Test that fit_children defaults sensibly with no children."):
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 0)
+
+    with subtests.test("Test that adding a child automatically resizes the parent."):
+        box.add(child)
+        # Only the width should update to fit the child; not the height.
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 100)
+
+    with subtests.test(
+        "Test that adding a second child automatically resizes the parent."
+    ):
+        box.add(child2)
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 500)
+
+    with subtests.test("Test that removing a child automatically resizes the parent."):
+        box.remove(child2)
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 100)
+
+    with subtests.test(
+        "Test that removing all children automatically resizes the parent."
+    ):
+        box.remove(child)
+        assert box.rect == cocos.rect.Rect(0, 0, 100, 0)
+
+
+def test_width_and_height_dynamic_size_fit_children(mock_gui, subtests):
+    """Test that both width and height can be dynamically sized simultaneously."""
+    box = Box(
+        BoxDefinition(
+            width=None,
+            height=None,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children,
+        )
+    )
+    assert box.rect == cocos.rect.Rect(0, 0, 0, 0)
+
+    with subtests.test("Test that adding a child updates both width and height."):
+        child = Box(BoxDefinition(width=1000, height=100))
+        box.add(child)
+        assert box.rect == cocos.rect.Rect(0, 0, 1000, 100)
+
+    with subtests.test("Test that resizing the child updates the width and height."):
+        child.definition = BoxDefinition(width=300, height=400)
+        child.update_rect()
+        assert box.rect == cocos.rect.Rect(0, 0, 300, 400)
+
+
+def test_width_and_height_dynamic_size_match_parent(mock_gui, subtests):
+    """Test that both width and height can be dynamically sized simultaneously."""
+    child = Box(
+        BoxDefinition(
+            width=None,
+            height=None,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
+        )
+    )
+    parent = Box(BoxDefinition(width=1000, height=100))
+    assert child.rect == cocos.rect.Rect(0, 0, 0, 0)
+
+    with subtests.test(
+        "Test that adding the child causes the child to match the parent."
+    ):
+        parent.add(child)
+        assert child.rect == cocos.rect.Rect(0, 0, 1000, 100)
+
+    with subtests.test("Test that resizing the parent causes the child to resize."):
+        parent.definition = BoxDefinition(width=300, height=400)
+        parent.update_rect()
+        assert child.rect == cocos.rect.Rect(0, 0, 300, 400)
+
+
+def test_ignore_child_size_if_dynamically_matches_parent(mock_gui, subtests):
+    """Test that a dynamic child and a dynamic parent interact correctly."""
+    child = Box(
+        BoxDefinition(
+            width=None,
+            height=100,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
+        )
+    )
+    parent = Box(
+        BoxDefinition(
+            width=300,
+            height=None,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children,
+        )
+    )
+    parent.add(child)
+
+    # The child should match the parents width; and the parent should fit the childs height.
+    assert child.rect == cocos.rect.Rect(0, 0, 300, 100)
+    assert parent.rect == cocos.rect.Rect(0, 0, 300, 100)

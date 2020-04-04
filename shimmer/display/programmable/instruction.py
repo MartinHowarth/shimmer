@@ -65,7 +65,7 @@ class InstructionDisplay(Button):
         self.executing_mask: Optional[cocos.layer.ColorLayer] = None
 
         super(InstructionDisplay, self).__init__(definition)
-        self.definition: InstructionDisplayDefinition = definition
+        self.definition: InstructionDisplayDefinition = self.definition
         self.update_draggable_anchor()
         self.update_mask()
 

@@ -27,7 +27,7 @@ jobs:
       - name: Install requirements
         run: poetry install
 
-      - name: Run pydocstyle
+      - name: Run black
         run: poetry run black --check ${LINT_DIRS}
 
   flake8:
@@ -49,7 +49,7 @@ jobs:
       - name: Install requirements
         run: poetry install
 
-      - name: Run pydocstyle
+      - name: Run flake8
         run: poetry run flake8 --count --max-line-length=127 --statistics ${LINT_DIRS}
 
   mypy:
@@ -71,7 +71,7 @@ jobs:
       - name: Install requirements
         run: poetry install
 
-      - name: Run pydocstyle
+      - name: Run mypy
         run: poetry run mypy ${LINT_DIRS}
 
   pydocstyle:

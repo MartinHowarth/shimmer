@@ -27,10 +27,6 @@ def mock_gui(mocker):
     mocker.patch("cocos.layer.util_layers.director", new=mock_director)
     mocker.patch("pyglet.window.Window", new=MockWindow)
 
-    # Make sure we've patched them correctly. This is mostly just future-proofing against
-    # refactors in pyglet or cocos.
-    assert issubclass(cocos.director.window.Window, MockWindow)
-
     # Disable autoscale so cocos doesn't try and use gl to scale the window.
     cocos.director.director.init(autoscale=False)
 

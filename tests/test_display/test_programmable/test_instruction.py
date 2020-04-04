@@ -35,7 +35,7 @@ def test_instruction_display_active(run_gui, dummy_instruction):
 
 
 def test_instruction_display_draggable(run_gui, dummy_instruction):
-    """Instruction should be draggable from the left hand side.."""
+    """Instruction should be draggable from the left hand side."""
     defn = InstructionDisplayDefinition(draggable=True)
     layer = InstructionDisplay(dummy_instruction, defn)
     assert run_gui(test_instruction_display_draggable, layer)

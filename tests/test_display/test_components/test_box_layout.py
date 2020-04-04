@@ -5,6 +5,7 @@ from shimmer.display.components.box_layout import (
     BoxRow,
     BoxColumn,
     build_rectangular_grid,
+    BoxLayoutDefinition,
 )
 from shimmer.display.data_structures import Color
 from shimmer.display.widgets.button import ButtonDefinition, Button
@@ -31,7 +32,7 @@ def test_box_row(run_gui):
         btn = Button(make_visible_button_definition(str(ind), 40, 100),)
         buttons.append(btn)
 
-    box_row = BoxRow(buttons, spacing=10)
+    box_row = BoxRow(BoxLayoutDefinition(spacing=10), buttons)
     assert box_row.rect.width == 190
     assert box_row.rect.height == 100
     assert box_row.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 190, 100)
@@ -46,7 +47,7 @@ def test_box_column(run_gui):
         btn = Button(make_visible_button_definition(str(ind), 100, 40),)
         buttons.append(btn)
 
-    box_column = BoxColumn(buttons)
+    box_column = BoxColumn(boxes=buttons)
     assert box_column.rect.width == 100
     assert box_column.rect.height == 190
     assert box_column.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 100, 190)
@@ -62,7 +63,9 @@ def test_build_rectangular_grid_horizontal(run_gui):
         btn = Button(make_visible_button_definition(str(ind), 100, 40),)
         buttons.append(btn)
 
-    box_grid = build_rectangular_grid(buttons, width=4)
+    box_grid = build_rectangular_grid(
+        BoxLayoutDefinition(boxes_per_row=4, boxes_per_column=None), buttons
+    )
 
     assert box_grid.rect.width == 430
     assert box_grid.rect.height == 140

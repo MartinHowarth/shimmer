@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, replace
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 
 import pyglet
 from pyglet import gl
@@ -18,6 +18,7 @@ from ..components.mouse_box import (
     EVENT_UNHANDLED,
     EVENT_HANDLED,
 )
+from ..data_structures import White, Black, Color
 from ..keyboard import KeyboardHandlerDefinition, KeyboardHandler
 
 log = logging.getLogger(__name__)
@@ -157,6 +158,9 @@ class EditableTextBoxDefinition(TextBoxDefinition):
     width: int = 300
     height: Optional[int] = None
     multiline: bool = False
+    background_color: Color = White
+    font: FontDefinition = FontDefinition("calibri", 16, color=Black)
+    on_change: Optional[Callable[[str], None]] = None
 
     @property
     def actual_height(self) -> int:
@@ -209,9 +213,10 @@ class EditableTextBox(MouseBox):
         )
         self._keyboard_handler = KeyboardHandler(
             KeyboardHandlerDefinition(
-                on_text=self._caret.on_text,
+                on_text=self.on_text,
                 on_text_motion=self._caret.on_text_motion,
                 on_text_motion_select=self._caret.on_text_motion_select,
+                logging_name="text_box",
             )
         )
         self.add(self._keyboard_handler)
@@ -223,6 +228,17 @@ class EditableTextBox(MouseBox):
             ),
             focus_type=KeyboardFocusBox,
         )
+
+    @property
+    def text(self) -> str:
+        """The current text in the text box."""
+        return self._layout.document.text
+
+    def on_text(self, text: str) -> Optional[bool]:
+        """Called when the user enters text into the text box."""
+        if self.definition.on_change is not None:
+            self.definition.on_change(self.text)
+        return self._caret.on_text(text)
 
     def take_focus(self):
         """Start capturing keyboard events."""

@@ -202,7 +202,9 @@ class Button(MouseBox):
         if self.definition.keyboard_shortcut is None:
             return
 
-        keymap = KeyboardHandlerDefinition()
+        keymap = KeyboardHandlerDefinition(
+            logging_name=f"button[{self.definition.text}]"
+        )
         keyboard_action = KeyboardActionDefinition(
             chords=[
                 self.definition.keyboard_shortcut.upper(),

@@ -5,8 +5,9 @@ from typing import Optional, List, Callable
 from pyglet.window import key
 
 import cocos
-from shimmer.display.alignment import LeftTop
 from shimmer.display.components.box_layout import create_box_layout, BoxLayoutDefinition
+from shimmer.display.components.font import FontDefinition
+from shimmer.display.data_structures import White, Black
 from shimmer.display.keyboard import (
     KeyboardActionDefinition,
     KeyboardHandlerDefinition,
@@ -28,10 +29,11 @@ class Calculator(Window):
         ["C", "0", "=", "*"],
     ]
     layout_definition = BoxLayoutDefinition(boxes_per_row=4, boxes_per_column=4)
-    margin = 30
 
     def __init__(self):
         """Create a Calculator."""
+        definition = WindowDefinition(title="Calculator", title_bar_height=None)
+        super(Calculator, self).__init__(definition)
         self.calculation: str = ""
         self.result: Optional[str] = None
 
@@ -40,32 +42,24 @@ class Calculator(Window):
 
         # Arrange them into a grid layout.
         self.button_layout = create_box_layout(self.layout_definition, self.buttons)
-        # Get the size of that layout
-        layout_rect = self.button_layout.bounding_rect_of_children()
+
         # Create the calculator display
         self.text_box = TextBox(
-            TextBoxDefinition(width=layout_rect.width - 2 * self.margin, height=30)
+            TextBoxDefinition(
+                width=self.button_layout.rect.width,
+                height=30,
+                background_color=White,
+                font=FontDefinition("calibri", 16, color=Black),
+            )
         )
-        # Define the window to be large enough to contain the buttons.
-        definition = WindowDefinition(
-            title="Calculator",
-            title_bar_height=None,
-            width=layout_rect.width + 2 * self.margin,
-            body_height=layout_rect.height
-            + self.text_box.rect.height
-            + 2 * self.margin,
-        )
-        super(Calculator, self).__init__(definition)
 
         # Create a keyboard handler and add it to this node so that it responds to keyboard events.
         self.keyboard_handler = KeyboardHandler(self.create_keymap())
         self.add(self.keyboard_handler)
 
         # Add the display and the buttons to the Window body with sensible alignment.
-        self.add_child_to_body(
-            self.text_box, body_anchor=LeftTop, spacing=(self.margin, 0),
-        )
         self.add_child_to_body(self.button_layout)
+        self.add_child_to_body(self.text_box)
 
     def create_buttons(self) -> List[Button]:
         """Create a button for each of the defined symbols in the symbol layout."""
@@ -169,7 +163,7 @@ def create_new_calculator(*_, **__):
     cocos.director.director.scene.add(calculator)
 
     # Make the new calculator the currently focused window.
-    calculator.focus_box.take_focus()
+    calculator.make_focused()
 
 
 def main():
@@ -192,4 +186,7 @@ def main():
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
     main()

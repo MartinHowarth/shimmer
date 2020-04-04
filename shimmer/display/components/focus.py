@@ -346,14 +346,12 @@ def make_focusable(
     if definition is None:
         definition = FocusBoxDefinition()
 
-    definition = replace(
-        definition, width=box.definition.width, height=box.definition.height,
-    )
+    definition = replace(definition, width=box.rect.width, height=box.rect.height,)
 
     focus_box = focus_type(definition)
     # Add the focus box as the last child so that its event handlers get pushed first.
     # Use z=10000 as this should be high enough to make sure that the FocusBox is always the first
     # child without having to keep moving it up the stack if another child with a higher z value
     # is added.
-    box.add(focus_box, z=10000)
+    box.add(focus_box, z=10000, no_resize=True)
     return focus_box

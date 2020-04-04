@@ -4,8 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, cast
 
-from shimmer.display.components.box import BoxDefinition
-from shimmer.display.components.box_layout import BoxColumn
+from shimmer.display.components.box_layout import BoxColumn, BoxLayoutDefinition
 from shimmer.display.programmable.instruction import (
     InstructionDisplay,
     InstructionDisplayDefinition,
@@ -16,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class CodeBlockDisplayDefinition(BoxDefinition):
+class CodeBlockDisplayDefinition(BoxLayoutDefinition):
     """Definition of how to display a CodeBlock."""
 
     instruction_definition: InstructionDisplayDefinition = field(
@@ -30,16 +29,16 @@ class CodeBlockDisplay(BoxColumn):
     """Graphical display of a set of programmable code instructions."""
 
     def __init__(
-        self, code_block: CodeBlock, code_block_definition: CodeBlockDisplayDefinition,
+        self, code_block: CodeBlock, definition: CodeBlockDisplayDefinition,
     ):
         """
         Create a new CodeBlockDisplay.
 
         :param code_block: The code block to display.
         """
-        super(CodeBlockDisplay, self).__init__([], code_block_definition.spacing)
+        super(CodeBlockDisplay, self).__init__(definition)
         self.code_block: CodeBlock = code_block
-        self.definition: CodeBlockDisplayDefinition = code_block_definition
+        self.definition: CodeBlockDisplayDefinition = self.definition
 
         self._boxes = cast(List[InstructionDisplay], self._boxes)
         self.update_instructions()

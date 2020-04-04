@@ -17,6 +17,7 @@ from pyglet.window.key import (
 )
 
 import cocos
+from shimmer.log_utils import LTRACE
 from .helpers import bitwise_add
 
 NO_MOD = 0
@@ -146,6 +147,8 @@ class KeyboardHandlerDefinition:
     on_text_motion_select: Optional[Callable[[int], Optional[bool]]] = None
     focus_required: bool = True
 
+    logging_name: str = ""
+
     def add_keyboard_action(self, keyboard_action: KeyboardActionDefinition) -> None:
         """Add a KeyboardActionDefinition to this keymap."""
         for chord in keyboard_action.chords:
@@ -271,6 +274,8 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
         if EVENT_HANDLED in results:
             log.debug(f"on_key_press consumed by {self}")
             return EVENT_HANDLED
+
+        log.log(LTRACE, f"on_key_press ignored by {self}")
         return EVENT_UNHANDLED
 
     def on_key_release(self, symbol: int, modifiers: int) -> Optional[bool]:
@@ -333,6 +338,8 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
         if EVENT_HANDLED in results:
             log.debug(f"on_text({text!r}) consumed by {self}")
             return EVENT_HANDLED
+
+        log.log(LTRACE, f"on_text({text!r}) ignored by {self}")
         return EVENT_UNHANDLED
 
     def _should_handle_on_text_motion(self, motion: int) -> bool:
@@ -394,6 +401,10 @@ class KeyboardHandler(cocos.cocosnode.CocosNode):
             self.definition.on_text_motion_select(motion)
             return EVENT_HANDLED
         return EVENT_UNHANDLED
+
+    def __str__(self) -> str:
+        """String representation of this KeyboardHandler for logging purposes."""
+        return f"{self.__class__.__name__}[{self.definition.logging_name}]({id(self)})"
 
 
 def add_simple_keyboard_handler(

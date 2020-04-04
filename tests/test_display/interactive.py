@@ -37,7 +37,9 @@ class PassOrFailInput(ActiveBox):
                 text=dedent(test_description or "").strip(), width=window_width,
             )
         )
-        keyboard_handler_definition = KeyboardHandlerDefinition(focus_required=False)
+        keyboard_handler_definition = KeyboardHandlerDefinition(
+            focus_required=False, logging_name="test_yes_no"
+        )
         keyboard_handler_definition.add_keyboard_action_simple(
             "n", self.fail_test,
         )

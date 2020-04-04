@@ -1,26 +1,20 @@
-"""
-A set of buttons that users can choose one, or many of.
-
-For example, this can be used to create:
-- a radio button
-- a "select all that apply" set of buttons
-"""
+"""Module defining a set of Buttons representing a multiple choice question."""
 
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
-from typing import Set, Optional, Union, Dict, Any
+from typing import Optional, Union, Dict, Set, Any
 
-from shimmer.display.helpers import bundle_callables
-from .button import ButtonDefinition, ToggleButton
-from .question_definition import MultipleChoiceQuestionDefinition
-from ..components.box import Box, BoxDefinition
-from ..components.box_layout import (
-    BoxColumn,
-    BoxRow,
-    create_box_layout,
+from shimmer.display.components.box import BoxDefinition, Box
+from shimmer.display.components.box_layout import (
     BoxLayoutDefinition,
+    BoxRow,
+    BoxColumn,
+    create_box_layout,
 )
-from ..components.mouse_box import MouseClickEventCallable
+from shimmer.display.components.mouse_box import MouseClickEventCallable
+from shimmer.display.helpers import bundle_callables
+from shimmer.display.widgets.button import ButtonDefinition, ToggleButton
+from shimmer.display.widgets.question_definition import MultipleChoiceQuestionDefinition
 
 
 @dataclass(frozen=True)
@@ -44,7 +38,7 @@ class MultipleChoiceButtons(Box):
     def __init__(self, definition: MultipleChoiceButtonsDefinition):
         """Create a MultipleChoiceButtons."""
         super(MultipleChoiceButtons, self).__init__(definition)
-        self.definition: MultipleChoiceButtonsDefinition = definition
+        self.definition: MultipleChoiceButtonsDefinition = self.definition
         self._layout: Optional[Union[BoxRow, BoxColumn]] = None
         self._buttons: Dict[Union[str, Box], ToggleButton] = {}
         self._current_selection: Dict[Union[str, Box], bool] = defaultdict(bool)
@@ -53,7 +47,7 @@ class MultipleChoiceButtons(Box):
 
     @property
     def currently_selected(self) -> Set[Union[str, Box]]:
-        """Return a list of the currently selected options."""
+        """Return a set of the currently selected options."""
         return set(
             item[0]
             for item in filter(
@@ -106,10 +100,8 @@ class MultipleChoiceButtons(Box):
         """
         self._current_selection[chosen] = button.is_toggled
 
-        if self.definition.question.on_select is not None:
-            self.definition.question.on_select(
-                self.currently_selected, chosen, button.is_toggled
-            )
+        if self.definition.question.on_change is not None:
+            self.definition.question.on_change(self.currently_selected)
 
         # If only 1 button is allowed to be selected, deselect all other ones.
         # This will actually call back into here for each deselection as they will call their

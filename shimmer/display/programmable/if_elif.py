@@ -4,8 +4,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import cast, Optional, List
 
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.components.box_layout import BoxColumn
+from shimmer.display.components.box import Box
+from shimmer.display.components.box_layout import BoxColumn, BoxLayoutDefinition
 from shimmer.display.programmable.code_block import (
     CodeBlockDisplay,
     CodeBlockDisplayDefinition,
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class InstructionWithBlockDisplayDefinition(BoxDefinition):
+class InstructionWithBlockDisplayDefinition(BoxLayoutDefinition):
     """Definition of how to display an instruction with an associated CodeBlock."""
 
     # Definition of the main If statement display
@@ -36,6 +36,7 @@ class InstructionWithBlockDisplayDefinition(BoxDefinition):
     )
     # How far the code block is indented by compared to the If instruction.
     code_block_indentation: int = 20
+    spacing = 0
 
 
 class InstructionWithBlockDisplay(Box):
@@ -107,7 +108,7 @@ class IfElifElseDisplay(BoxColumn):
         :param instruction: The IfElifElse instruction to display.
         :param definition: The definition of the display style to use for each code block.
         """
-        super(IfElifElseDisplay, self).__init__([], 0)
+        super(IfElifElseDisplay, self).__init__()
         self.instruction: IfElifElse = instruction
         self.definition: InstructionWithBlockDisplayDefinition = definition
 
