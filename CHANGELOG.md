@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/MartinHowarth/shimmer/compare/1.4.0...1.5.0) (2020-04-04)
+
+
+### Features
+
+* Expand dialog support and add text input question form ([#94](https://github.com/MartinHowarth/shimmer/issues/94)) ([a846a99](https://github.com/MartinHowarth/shimmer/commit/a846a998d1b1638739eb83788f3462ddc62aaf20))
+
 # [1.4.0](https://github.com/MartinHowarth/shimmer/compare/1.3.0...1.4.0) (2020-02-22)
 
 
