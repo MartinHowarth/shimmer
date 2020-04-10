@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shimmer"
-version = "1.5.0"
+version = "1.6.0"
 description = "Create games in python, without hassle - batteries included!"
 
 license = "MIT"

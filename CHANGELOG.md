@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/MartinHowarth/shimmer/compare/1.5.0...1.6.0) (2020-04-10)
+
+
+### Features
+
+* Add basic image and sprite support. Also add simple shooter example game. ([#95](https://github.com/MartinHowarth/shimmer/issues/95)) ([277ab47](https://github.com/MartinHowarth/shimmer/commit/277ab477d98e7d514506faf8d7c8ef24da655bdf))
+
 # [1.5.0](https://github.com/MartinHowarth/shimmer/compare/1.4.0...1.5.0) (2020-04-04)
 
 
