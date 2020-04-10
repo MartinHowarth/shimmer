@@ -241,6 +241,8 @@ class Box(cocos.cocosnode.CocosNode):
         if self.definition.is_dynamic_sized and not no_resize:
             self.update_rect()
 
+        # Notify all children that the parent size may have changed.
+        # This also handles dynamic children who need to set their size for the first time.
         for child in self.get_children():
             if isinstance(child, Box):
                 child.on_parent_size_changed()

@@ -61,6 +61,9 @@ def run_gui():
         :param children: Cocos nodes to display.
         :return: True if the user pressed 'Y', or False if they pressed 'N'.
         """
+        # Reset the terminate_app flag so we can use the "run_gui" fixture multiple
+        # times in a single test.
+        cocos.director.director.terminate_app = False
         input_handler = PassOrFailInput(test_func.__name__, test_func.__doc__)
 
         children_layer = SimpleEventLayer(*children)

@@ -1,5 +1,4 @@
 """Collection of small functions to simplify common tasks."""
-
 from typing import Callable
 
 
