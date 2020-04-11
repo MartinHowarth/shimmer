@@ -9,7 +9,7 @@ from typing import no_type_check
 
 from mock import MagicMock
 
-from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
+from shimmer.components.mouse_box import MouseBox, MouseBoxDefinition
 
 
 @no_type_check  # Ignore typing because Mocks don't type nicely.

@@ -6,8 +6,8 @@ from mock import MagicMock
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 from pyglet.window import key
 
-from shimmer.display.helpers import bitwise_add
-from shimmer.display.keyboard import (
+from shimmer.helpers import bitwise_add
+from shimmer.keyboard import (
     ChordDefinition,
     KeyboardActionDefinition,
     KeyboardHandlerDefinition,

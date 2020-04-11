@@ -5,14 +5,14 @@ from typing import no_type_check
 
 from mock import MagicMock
 
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.components.draggable_box import (
+from shimmer.components.box import Box, BoxDefinition
+from shimmer.components.draggable_box import (
     DraggableBox,
     DraggableBoxDefinition,
     SnapBox,
     SnapBoxDefinition,
 )
-from shimmer.display.data_structures import Color
+from shimmer.data_structures import Color
 
 
 def create_base_box() -> Box:

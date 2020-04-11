@@ -5,15 +5,17 @@ from typing import Tuple
 
 import pytest
 
-from shimmer.display.data_structures import Color
-from shimmer.display.widgets.button import ButtonDefinition
-from shimmer.display.widgets.multiple_choice_buttons import (
+from shimmer.data_structures import Color
+from shimmer.widgets.button import ButtonDefinition
+from shimmer.widgets.multiple_choice_buttons import (
     MultipleChoiceButtonsDefinition,
     MultipleChoiceButtons,
 )
-from shimmer.display.widgets.question_definition import MultipleChoiceQuestionDefinition
-from shimmer.display.widgets.question_definition import OnQuestionChangeCallback
-from shimmer.display.widgets.text_box import TextBox
+from shimmer.widgets.question_definition import (
+    MultipleChoiceQuestionDefinition,
+    OnQuestionChangeCallback,
+)
+from shimmer.widgets.text_box import TextBox
 
 
 @pytest.fixture

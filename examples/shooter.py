@@ -10,12 +10,12 @@ from cocos.actions.base_actions import Action, sequence
 from cocos.actions.instant_actions import CallFunc
 from cocos.actions.interval_actions import MoveTo
 from cocos.euclid import Vector2
-from shimmer.display.alignment import LeftTop
-from shimmer.display.components.box import Box, BoxDefinition, DynamicSizeBehaviourEnum
-from shimmer.display.components.mouse_box import MouseBox, MouseBoxDefinition
-from shimmer.display.components.sprite_box import SpriteBoxDefinition, SpriteBox
-from shimmer.display.primitives import Point2d, Color
-from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
+from shimmer.alignment import LeftTop
+from shimmer.components.box import Box, BoxDefinition, DynamicSizeBehaviourEnum
+from shimmer.components.mouse_box import MouseBox, MouseBoxDefinition
+from shimmer.components.sprite_box import SpriteBoxDefinition, SpriteBox
+from shimmer.primitives import Point2d, Color
+from shimmer.widgets.text_box import TextBoxDefinition, TextBox
 
 ASSETS_PATH = Path(os.path.dirname(__file__)) / "assets"
 

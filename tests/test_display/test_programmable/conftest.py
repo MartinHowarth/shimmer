@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from shimmer.engine.programmable.definition import (
+from shimmer.programmable.logic.definition import (
     CodeBlock,
     Instruction,
     IfElifElse,

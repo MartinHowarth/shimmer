@@ -1,6 +1,6 @@
 """Tests for the drawing components."""
 
-from shimmer.display.components.drawing import (
+from shimmer.components.drawing import (
     RectDrawingBoxDefinition,
     RectDrawingBox,
 )

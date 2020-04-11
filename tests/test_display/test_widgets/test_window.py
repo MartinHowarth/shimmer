@@ -1,6 +1,6 @@
 """Graphical tests for the Window widget."""
 
-from shimmer.display.widgets.window import Window, WindowDefinition
+from shimmer.widgets.window import Window, WindowDefinition
 
 
 def test_window(run_gui):

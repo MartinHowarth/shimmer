@@ -2,7 +2,7 @@
 
 from pyglet.window.key import MOD_SHIFT, MOD_CTRL, MOD_ALT, MOD_NUMLOCK
 
-from shimmer.display.helpers import bitwise_contains, bitwise_add, bitwise_remove
+from shimmer.helpers import bitwise_contains, bitwise_add, bitwise_remove
 
 
 def test_bitwise_add(subtests):

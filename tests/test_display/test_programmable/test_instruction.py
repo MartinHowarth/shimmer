@@ -6,11 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 import cocos
-from shimmer.display.programmable.instruction import (
+from shimmer.programmable.instruction import (
     InstructionDisplay,
     InstructionDisplayDefinition,
 )
-from shimmer.engine.programmable.definition import Instruction
+from shimmer.programmable.logic.definition import Instruction
 
 
 @pytest.fixture

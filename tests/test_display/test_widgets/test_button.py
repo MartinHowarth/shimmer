@@ -6,8 +6,8 @@ from typing import Any, no_type_check
 import pytest
 from mock import MagicMock
 
-from shimmer.display.data_structures import Color
-from shimmer.display.widgets.button import ButtonDefinition, Button, ToggleButton
+from shimmer.data_structures import Color
+from shimmer.widgets.button import ButtonDefinition, Button, ToggleButton
 
 
 @pytest.fixture

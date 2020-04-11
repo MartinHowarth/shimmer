@@ -5,14 +5,14 @@ from textwrap import dedent
 from typing import Optional
 
 import cocos
-from shimmer.display.alignment import LeftBottom, LeftTop
-from shimmer.display.components.box import ActiveBox, BoxDefinition
-from shimmer.display.components.font import Calibri
-from shimmer.display.keyboard import (
+from shimmer.alignment import LeftBottom, LeftTop
+from shimmer.components.box import ActiveBox, BoxDefinition
+from shimmer.components.font import Calibri
+from shimmer.keyboard import (
     KeyboardHandler,
     KeyboardHandlerDefinition,
 )
-from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
+from shimmer.widgets.text_box import TextBox, TextBoxDefinition
 
 
 class PassOrFailInput(ActiveBox):

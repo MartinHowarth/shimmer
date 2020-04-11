@@ -8,15 +8,15 @@ from random import randint, choice
 from string import ascii_lowercase
 
 import cocos
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.components.focus import (
+from shimmer.components.box import Box, BoxDefinition
+from shimmer.components.focus import (
     FocusBoxDefinition,
     make_focusable,
     EVENT_HANDLED,
 )
-from shimmer.display.data_structures import Color
-from shimmer.display.keyboard import add_simple_keyboard_handler
-from shimmer.display.widgets.text_box import TextBoxDefinition, TextBox
+from shimmer.data_structures import Color
+from shimmer.keyboard import add_simple_keyboard_handler
+from shimmer.widgets.text_box import TextBoxDefinition, TextBox
 
 
 @dataclass(frozen=True)

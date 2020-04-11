@@ -6,7 +6,7 @@ from pathlib import Path
 import pyglet
 import pytest
 
-from shimmer.display.components.sprite_box import SpriteBox, SpriteBoxDefinition
+from shimmer.components.sprite_box import SpriteBox, SpriteBoxDefinition
 
 
 @pytest.fixture
@@ -16,9 +16,12 @@ def cat_path() -> Path:
 
 
 @pytest.fixture
-def cat_path_relative() -> Path:
-    """Path to kitten.png relative to this test file."""
-    return Path("kitten.png")
+def cat_path_relative(cat_path: Path) -> Path:
+    """Path to kitten.png relative to the current working directory."""
+    cwd = Path.cwd()
+    relative_path = str(cat_path).replace(str(cwd), "")
+    relative_path = relative_path.lstrip("\\/")
+    return Path(relative_path)
 
 
 @pytest.fixture
@@ -52,7 +55,6 @@ def test_sprite_box_loading_mechanisms(run_gui, subtests, cat_path, cat_path_rel
         sprite = SpriteBox(
             SpriteBoxDefinition(image=cat_path_relative, width=200, height=200)
         )
-        print(run_gui)
         assert run_gui(test_sprite_box_loading_mechanisms, sprite)
 
     with subtests.test("Test loading from binary IO."):

@@ -6,7 +6,7 @@ from typing import Callable, List, Tuple, Any
 import pytest
 
 import cocos
-from shimmer.display.widgets.text_box import TextBox, TextBoxDefinition
+from shimmer.widgets.text_box import TextBox, TextBoxDefinition
 from tests.test_display.mock_window import MockWindow
 from .interactive import PassOrFailInput, SimpleEventLayer
 from .mock_director import MockDirector

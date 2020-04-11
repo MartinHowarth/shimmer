@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 from pyglet.window.mouse import LEFT
 
-from shimmer.display.components.box import Box
+from shimmer.components.box import Box
 
 
 class MockMouse:

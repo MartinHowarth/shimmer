@@ -33,6 +33,8 @@ pytest = "^5.3.1"
 pytest-subtests = "^0.2.1"
 mock = "^3.0.5"
 pytest-mock = "^1.13.0"
+coverage = "^4.5.4"
+pytest-cov = "^2.8.1"
 
 [tool.pytest]
 mock_use_standalone_module = true
@@ -40,4 +42,3 @@ mock_use_standalone_module = true
 [build-system]
 requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"
-

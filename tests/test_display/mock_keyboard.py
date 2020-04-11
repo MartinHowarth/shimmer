@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from shimmer.display.keyboard import KeyboardHandler
+from shimmer.keyboard import KeyboardHandler
 
 
 class MockKeyboard:

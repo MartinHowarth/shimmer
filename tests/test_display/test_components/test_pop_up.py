@@ -1,21 +1,21 @@
 """Test pop_up method definitions."""
 
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.components.box_track_cursor import (
+from shimmer.components.box import Box, BoxDefinition
+from shimmer.components.box_track_cursor import (
     BoxTrackCursor,
     BoxTrackCursorDefinition,
 )
-from shimmer.display.components.mouse_box import (
+from shimmer.components.mouse_box import (
     MouseBox,
     MouseBoxDefinition,
 )
-from shimmer.display.components.pop_up import (
+from shimmer.components.pop_up import (
     create_pop_up_later,
     remove_pop_up_later,
     toggle_pop_up_later,
 )
-from shimmer.display.data_structures import Color
-from shimmer.display.helpers import bundle_callables
+from shimmer.data_structures import Color
+from shimmer.helpers import bundle_callables
 
 
 def test_pop_up_on_hover(run_gui):

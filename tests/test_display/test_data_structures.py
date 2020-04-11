@@ -1,7 +1,7 @@
 """Test data structures used for display elements. These tests do not require a GUI."""
 
-from shimmer.display.components.font import Calibri
-from shimmer.display.widgets.text_box import TextBoxDefinition
+from shimmer.components.font import Calibri
+from shimmer.widgets.text_box import TextBoxDefinition
 
 
 def test_text_box_definition_to_pyglet_label_kwargs():

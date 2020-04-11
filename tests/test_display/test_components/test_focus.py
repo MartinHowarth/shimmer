@@ -3,8 +3,8 @@
 from typing import Tuple
 
 import cocos
-from shimmer.display.components.box import Box
-from shimmer.display.components.focus import (
+from shimmer.components.box import Box
+from shimmer.components.focus import (
     FocusBox,
     VisualAndKeyboardFocusBox,
     _FocusStackHandler,

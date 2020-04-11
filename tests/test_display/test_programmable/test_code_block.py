@@ -4,12 +4,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import cocos
-from shimmer.display.programmable.code_block import (
+from shimmer.programmable.code_block import (
     CodeBlockDisplay,
     CodeBlock,
     CodeBlockDisplayDefinition,
 )
-from shimmer.engine.programmable.definition import Instruction
+from shimmer.programmable.logic.definition import Instruction
 
 
 def test_code_block_display(run_gui, dummy_code_block):

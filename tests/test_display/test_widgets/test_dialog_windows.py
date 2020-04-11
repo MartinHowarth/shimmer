@@ -1,17 +1,15 @@
 """Tests for the common dialog windows."""
 
-from shimmer.display.widgets.dialogs.common_dialogs import create_are_you_sure_dialog
-from shimmer.display.widgets.dialogs.multiple_choice import (
+from shimmer.widgets.dialogs.common_dialogs import create_are_you_sure_dialog
+from shimmer.widgets.dialogs.multiple_choice import (
     create_multiple_choice_question_dialog,
 )
-from shimmer.display.widgets.dialogs.text_input import (
+from shimmer.widgets.dialogs.text_input import (
     create_text_input_dialog,
     TextInputQuestionDefinition,
 )
-from shimmer.display.widgets.multiple_choice_buttons import (
-    MultipleChoiceButtonsDefinition,
-)
-from shimmer.display.widgets.question_definition import MultipleChoiceQuestionDefinition
+from shimmer.widgets.multiple_choice_buttons import MultipleChoiceButtonsDefinition
+from shimmer.widgets.question_definition import MultipleChoiceQuestionDefinition
 
 
 def test_are_you_sure_dialog(run_gui, question_result_display):

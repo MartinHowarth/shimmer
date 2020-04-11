@@ -4,8 +4,8 @@ from typing import Tuple, Callable, Any
 
 import pytest
 
-from shimmer.display.widgets.question_definition import OnQuestionChangeCallback
-from shimmer.display.widgets.text_box import TextBox
+from shimmer.widgets.question_definition import OnQuestionChangeCallback
+from shimmer.widgets.text_box import TextBox
 
 
 @pytest.fixture

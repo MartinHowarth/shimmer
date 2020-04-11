@@ -2,14 +2,14 @@
 
 from typing import Callable, Optional
 
-from shimmer.display.components.selection import (
+from shimmer.components.selection import (
     SelectableBox,
     SelectionDrawingBox,
     SelectableBoxDefinition,
     MouseDefinedRect,
 )
-from shimmer.display.data_structures import ActiveGreen, PassiveBlue, Color
-from shimmer.display.primitives import create_color_rect
+from shimmer.data_structures import ActiveGreen, PassiveBlue, Color
+from shimmer.primitives import create_color_rect
 
 
 def make_dummy_selection_point(x: int, y: int) -> SelectableBox:

@@ -4,10 +4,10 @@ from dataclasses import replace
 
 import pytest
 
-from shimmer.display.alignment import HorizontalAlignment
-from shimmer.display.components.font import Calibri, ComicSans
-from shimmer.display.data_structures import Grey
-from shimmer.display.widgets.text_box import (
+from shimmer.alignment import HorizontalAlignment
+from shimmer.components.font import Calibri, ComicSans
+from shimmer.data_structures import Grey
+from shimmer.widgets.text_box import (
     TextBox,
     TextBoxDefinition,
     EditableTextBox,

@@ -2,8 +2,8 @@
 
 import cocos
 
-from shimmer.display.components.box import Box, BoxDefinition
-from shimmer.display.inspections import (
+from shimmer.components.box import Box, BoxDefinition
+from shimmer.inspections import (
     get_boxes_that_intersect_with_box,
     get_all_nodes_of_type,
 )
