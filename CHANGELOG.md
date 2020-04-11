@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/MartinHowarth/shimmer/compare/1.6.0...1.7.0) (2020-04-11)
+
+
+### Features
+
+* Remove legacy code and add coverage ([#96](https://github.com/MartinHowarth/shimmer/issues/96)) ([39ad891](https://github.com/MartinHowarth/shimmer/commit/39ad891b7210d0869a3763af7628cc284482b18c)), closes [#89](https://github.com/MartinHowarth/shimmer/issues/89)
+
 # [1.6.0](https://github.com/MartinHowarth/shimmer/compare/1.5.0...1.6.0) (2020-04-10)
 
 
