@@ -27,8 +27,7 @@ def change_text_callback(label):
     """Create a callback to change the text of a Button when it is interacted with."""
 
     def inner(box: Button, *_: Any, **__: Any) -> None:
-        box.definition = replace(box.definition, text=label)
-        box.update_label()
+        box.set_text(label)
 
     return inner
 

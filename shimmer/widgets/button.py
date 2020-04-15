@@ -4,7 +4,7 @@ A visible, clickable button.
 Changes color when interacted with (clicked. on hover) and calls the defined methods.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
 import cocos
@@ -91,6 +91,16 @@ class Button(MouseBox):
     def rect(self) -> cocos.rect.Rect:
         """Get the rect defining the shape of this button."""
         return self._rect
+
+    def set_text(self, text: str) -> None:
+        """Set the text of this button."""
+        # Update the definition so it remains correct.
+        self.definition = replace(self.definition, text=text,)
+        if self.label is None:
+            self.update_label()
+        else:
+            # Don't re-create the label unless necessary to save on CPU.
+            self.label.set_text(text)
 
     def update_label(self):
         """Recreate the button label."""
