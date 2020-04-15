@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/MartinHowarth/shimmer/compare/1.7.0...1.8.0) (2020-04-15)
+
+
+### Features
+
+* Make it easier to create just a BoxRow or BoxColumn without using the grid factory function. ([#98](https://github.com/MartinHowarth/shimmer/issues/98)) ([d4437e1](https://github.com/MartinHowarth/shimmer/commit/d4437e1644b913402ebc97184ce2fca7841e05e6))
+
 # [1.7.0](https://github.com/MartinHowarth/shimmer/compare/1.6.0...1.7.0) (2020-04-11)
 
 
