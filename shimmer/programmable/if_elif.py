@@ -3,9 +3,9 @@
 from dataclasses import dataclass, field
 from typing import cast, Optional, List
 
-from shimmer.alignment import LeftBottom, PositionalAnchor
+from shimmer.alignment import HorizontalAlignment
 from shimmer.components.box import Box
-from shimmer.components.box_layout import BoxColumn, BoxLayoutDefinition
+from shimmer.components.box_layout import BoxColumn, BoxColumnDefinition
 from shimmer.programmable.code_block import (
     CodeBlockDisplay,
     CodeBlockDisplayDefinition,
@@ -21,7 +21,7 @@ from shimmer.programmable.logic.definition import (
 
 
 @dataclass(frozen=True)
-class InstructionWithBlockDisplayDefinition(BoxLayoutDefinition):
+class InstructionWithBlockDisplayDefinition(BoxColumnDefinition):
     """Definition of how to display an instruction with an associated CodeBlock."""
 
     # Definition of the main If statement display
@@ -35,7 +35,7 @@ class InstructionWithBlockDisplayDefinition(BoxLayoutDefinition):
     # How far the code block is indented by compared to the If instruction.
     code_block_indentation: int = 20
     spacing: int = 0
-    alignment: PositionalAnchor = LeftBottom
+    alignment: HorizontalAlignment = HorizontalAlignment.left
 
 
 class InstructionWithBlockDisplay(Box):

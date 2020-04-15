@@ -2,12 +2,14 @@
 import pytest
 
 import cocos
-from shimmer.alignment import VerticalAlignment, HorizontalAlignment, PositionalAnchor
+from shimmer.alignment import VerticalAlignment, HorizontalAlignment
 from shimmer.components.box import BoxDefinition, Box
 from shimmer.components.box_layout import (
     BoxRow,
     BoxColumn,
-    BoxLayoutDefinition,
+    BoxGridDefinition,
+    BoxRowDefinition,
+    BoxColumnDefinition,
     create_box_layout,
 )
 from shimmer.data_structures import Color
@@ -32,7 +34,7 @@ def test_box_row(mock_gui):
     """Test arranging boxes in a horizontal row."""
     boxes = [Box(BoxDefinition(width=10 * i, height=100)) for i in range(1, 5)]
 
-    box_row = BoxRow(BoxLayoutDefinition(spacing=10), boxes)
+    box_row = BoxRow(BoxRowDefinition(spacing=10), boxes)
     assert box_row.rect.width == 130
     assert box_row.rect.height == 100
     assert box_row.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 130, 100)
@@ -51,8 +53,7 @@ def test_box_row_with_different_height_boxes(mock_gui, alignment):
     """Test arranging boxes of various heights in a horizontal row."""
     boxes = [Box(BoxDefinition(width=40, height=10 * i)) for i in range(1, 5)]
 
-    anchor = PositionalAnchor(vertical=alignment, horizontal=HorizontalAlignment.center)
-    box_row = BoxRow(BoxLayoutDefinition(spacing=10, alignment=anchor), boxes)
+    box_row = BoxRow(BoxRowDefinition(spacing=10, alignment=alignment), boxes)
     assert box_row.rect.width == 190
     assert box_row.rect.height == 40
     assert box_row.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 190, 40)
@@ -80,7 +81,7 @@ def test_box_column(mock_gui):
     """Test arranging boxes in a vertical column."""
     boxes = [Box(BoxDefinition(width=100, height=10 * i)) for i in range(1, 5)]
 
-    box_column = BoxColumn(BoxLayoutDefinition(spacing=10), boxes)
+    box_column = BoxColumn(BoxColumnDefinition(spacing=10), boxes)
     assert box_column.rect.width == 100
     assert box_column.rect.height == 130
     assert box_column.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 100, 130)
@@ -99,8 +100,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
     """Test arranging boxes of various widths in a vertical column."""
     boxes = [Box(BoxDefinition(width=10 * i, height=40)) for i in range(1, 5)]
 
-    anchor = PositionalAnchor(horizontal=alignment, vertical=VerticalAlignment.center)
-    box_column = BoxColumn(BoxLayoutDefinition(spacing=10, alignment=anchor), boxes)
+    box_column = BoxColumn(BoxColumnDefinition(spacing=10, alignment=alignment), boxes)
     assert box_column.rect.width == 40
     assert box_column.rect.height == 190
     assert box_column.bounding_rect_of_children() == cocos.rect.Rect(0, 0, 40, 190)
@@ -128,7 +128,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
     "definition,num_boxes,exp_outer_type,exp_outer,exp_inner",
     [
         pytest.param(
-            BoxLayoutDefinition(num_columns=None, num_rows=1),
+            BoxGridDefinition(num_columns=None, num_rows=1),
             10,
             BoxRow,
             1,
@@ -136,7 +136,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
             id="One row",
         ),
         pytest.param(
-            BoxLayoutDefinition(num_columns=1, num_rows=None),
+            BoxGridDefinition(num_columns=1, num_rows=None),
             10,
             BoxColumn,
             1,
@@ -144,7 +144,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
             id="One column",
         ),
         pytest.param(
-            BoxLayoutDefinition(num_columns=2, num_rows=None),
+            BoxGridDefinition(num_columns=2, num_rows=None),
             10,
             BoxColumn,
             2,
@@ -152,7 +152,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
             id="2 columns",
         ),
         pytest.param(
-            BoxLayoutDefinition(num_columns=10, num_rows=None),
+            BoxGridDefinition(num_columns=10, num_rows=None),
             10,
             BoxColumn,
             10,
@@ -160,7 +160,7 @@ def test_box_column_with_different_width_boxes(mock_gui, alignment):
             id="Max columns (10)",
         ),
         pytest.param(
-            BoxLayoutDefinition(num_columns=None, num_rows=10),
+            BoxGridDefinition(num_columns=None, num_rows=10),
             10,
             BoxRow,
             10,
@@ -181,8 +181,10 @@ def test_create_box_layout(
 
     if exp_outer * exp_inner > num_boxes:
         # Enough boxes to need two rows or columns to contain them.
-        exp_inner_type = BoxRow if exp_outer_type is BoxColumn else BoxColumn
-        assert isinstance(first_child, exp_inner_type)
+        if exp_outer_type is BoxColumn:
+            assert isinstance(first_child, BoxRow)
+        else:
+            assert isinstance(first_child, BoxColumn)
         assert len(box_layout.get_children()) == exp_outer
         assert len(first_child.get_children()) == exp_inner
     else:

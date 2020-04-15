@@ -5,7 +5,7 @@ from typing import Optional, List, Callable
 from pyglet.window import key
 
 import cocos
-from shimmer.components.box_layout import create_box_layout, BoxLayoutDefinition
+from shimmer.components.box_layout import create_box_layout, BoxGridDefinition
 from shimmer.components.font import FontDefinition
 from shimmer.data_structures import White, Black
 from shimmer.keyboard import (
@@ -28,7 +28,7 @@ class Calculator(Window):
         ["1", "2", "3", "/"],
         ["C", "0", "=", "*"],
     ]
-    layout_definition = BoxLayoutDefinition(num_columns=4, num_rows=4)
+    layout_definition = BoxGridDefinition(num_columns=4, num_rows=4)
 
     def __init__(self):
         """Create a Calculator."""

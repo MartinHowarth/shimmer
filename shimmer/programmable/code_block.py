@@ -3,8 +3,8 @@
 from dataclasses import dataclass, field
 from typing import List, cast
 
-from shimmer.alignment import LeftBottom, PositionalAnchor
-from shimmer.components.box_layout import BoxColumn, BoxLayoutDefinition
+from shimmer.alignment import HorizontalAlignment
+from shimmer.components.box_layout import BoxColumn, BoxColumnDefinition
 from shimmer.programmable.instruction import (
     InstructionDisplay,
     InstructionDisplayDefinition,
@@ -13,7 +13,7 @@ from shimmer.programmable.logic.definition import CodeBlock
 
 
 @dataclass(frozen=True)
-class CodeBlockDisplayDefinition(BoxLayoutDefinition):
+class CodeBlockDisplayDefinition(BoxColumnDefinition):
     """Definition of how to display a CodeBlock."""
 
     instruction_definition: InstructionDisplayDefinition = field(
@@ -21,7 +21,7 @@ class CodeBlockDisplayDefinition(BoxLayoutDefinition):
     )
     # Spacing between the vertically arranged instructions.
     spacing: int = 0
-    alignment: PositionalAnchor = LeftBottom
+    alignment: HorizontalAlignment = HorizontalAlignment.left
 
 
 class CodeBlockDisplay(BoxColumn):

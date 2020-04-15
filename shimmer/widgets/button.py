@@ -248,7 +248,7 @@ class ToggleButton(Button):
         """
         Called when the Box is clicked by the user.
 
-        Alternatively calls the `on_select` and `on_release` callback from the definition on each
+        Alternatively calls the `on_press` and `on_release` callback from the definition on each
         press.
         """
         self._is_toggled = not self._is_toggled

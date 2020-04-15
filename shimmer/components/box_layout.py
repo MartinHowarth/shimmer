@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import List, Union, Optional, Type, Iterable
+from typing import List, Union, Optional, Type, Iterable, Tuple
 
 import cocos
 from .box import Box, BoxDefinition
@@ -15,16 +15,47 @@ from ..alignment import (
 
 
 @dataclass(frozen=True)
-class BoxLayoutDefinition(BoxDefinition):
+class BoxRowDefinition(BoxDefinition):
     """
-    Definition of a layout of Boxes.
+    Definition of a row of Boxes.
+
+    :param spacing: Pixel spacing to leave between boxes.
+    :param alignment: Whether boxes should be aligned with each other at the top, center
+        or bottom. Only has an impact if the boxes are of different sizes.
+    """
+
+    spacing: int = 10
+    alignment: VerticalAlignment = VerticalAlignment.center
+
+
+@dataclass(frozen=True)
+class BoxColumnDefinition(BoxDefinition):
+    """
+    Definition of a column of Boxes.
+
+    :param spacing: Pixel spacing to leave between boxes.
+    :param alignment: Whether boxes should be aligned with each other on the left, center
+        or right. Only has an impact if the boxes are of different sizes.
+    """
+
+    spacing: int = 10
+    alignment: HorizontalAlignment = HorizontalAlignment.center
+
+
+@dataclass(frozen=True)
+class BoxGridDefinition(BoxDefinition):
+    """
+    Definition of a rectangular grid of Boxes.
 
     Supported layouts are:
-      - vertically column
-      - horizontal row
-      - rectangular grid
+      - single vertical column
+      - single horizontal row
+      - rectangular grid with multiple rows/columns
 
     :param spacing: Number of pixels to leave between Boxes.
+        Possible types:
+          - int:              Pixel spacing in both x and y directions
+          - Tuple[int, int]:  Pixel spacing in (x, y) directions respectively.
     :param num_columns: If given, boxes will fill row-by-row upwards; up to a maximum of `height`.
     :param num_rows: If given and `num_columns` is not, then boxes will fill
         column-by-column from left to right with no max width.
@@ -37,20 +68,30 @@ class BoxLayoutDefinition(BoxDefinition):
         in each row or column.
     """
 
-    spacing: int = 10
+    spacing: Union[int, Tuple[int, int]] = 10
     num_columns: Optional[int] = None
     num_rows: Optional[int] = 1
     alignment: PositionalAnchor = CenterCenter
 
+    @property
+    def row_definition(self) -> BoxRowDefinition:
+        """Definition for each row of the grid."""
+        spacing = self.spacing if isinstance(self.spacing, int) else self.spacing[0]
+        return BoxRowDefinition(spacing=spacing, alignment=self.alignment.vertical)
 
-class BoxLayout(Box):
+    @property
+    def column_definition(self) -> BoxColumnDefinition:
+        """Definition for each column of the grid."""
+        spacing = self.spacing if isinstance(self.spacing, int) else self.spacing[1]
+        return BoxColumnDefinition(spacing=spacing, alignment=self.alignment.horizontal)
+
+
+class BoxLayoutBase(Box):
     """A collection of Boxes with a well defined layout."""
-
-    definition_type: Type[BoxLayoutDefinition] = BoxLayoutDefinition
 
     def __init__(
         self,
-        definition: Optional[BoxLayoutDefinition] = None,
+        definition: Optional[BoxDefinition] = None,
         boxes: Optional[Iterable[Box]] = None,
     ):
         """
@@ -59,9 +100,8 @@ class BoxLayout(Box):
         :param definition: Definition of this Layout.
         :param boxes: List of Boxes to include in the layout.
         """
-        super(BoxLayout, self).__init__(definition)
+        super(BoxLayoutBase, self).__init__(definition)
         self._boxes: List[Box] = []
-        self.definition: BoxLayoutDefinition = self.definition
         for box in boxes or []:
             self.add(box)
         self.update_layout()
@@ -75,7 +115,7 @@ class BoxLayout(Box):
         :param obj: CocosNode to remove.
         :param no_resize: If True, then the size of this box is not dynamically changed.
         """
-        super(BoxLayout, self).remove(obj, no_resize=no_resize)
+        super(BoxLayoutBase, self).remove(obj, no_resize=no_resize)
         if isinstance(obj, Box):
             self._boxes.remove(obj)
             self.update_layout()
@@ -97,7 +137,7 @@ class BoxLayout(Box):
         :param no_resize: Ignored.
         :param position: Index to insert the box into the list of boxes. Defaults to the end.
         """
-        super(BoxLayout, self).add(child, z, name)
+        super(BoxLayoutBase, self).add(child, z, name)
         if isinstance(child, Box):
             if position is None:
                 self._boxes.append(child)
@@ -110,8 +150,24 @@ class BoxLayout(Box):
         """Update the position of all boxes in this Layout."""
 
 
-class BoxRow(BoxLayout):
+class BoxRow(BoxLayoutBase):
     """Arranges boxes horizontally. Boxes are arranged from left to right."""
+
+    definition_type: Type[BoxRowDefinition] = BoxRowDefinition
+
+    def __init__(
+        self,
+        definition: Optional[BoxRowDefinition] = None,
+        boxes: Optional[Iterable[Box]] = None,
+    ):
+        """
+        Create a new BoxRow.
+
+        :param definition: Definition to use to layout the boxes.
+        :param boxes: The boxes to be laid out. More can be added later using `self.add(box)`.
+        """
+        super(BoxRow, self).__init__(definition, boxes)
+        self.definition: BoxRowDefinition = self.definition
 
     def update_layout(self) -> None:
         """Update the position of all boxes in this Layout."""
@@ -126,23 +182,39 @@ class BoxRow(BoxLayout):
         for box in self._boxes:
             box.x = x_total
             x_total += box.rect.width + self.definition.spacing
-            if self.definition.alignment.vertical == VerticalAlignment.bottom:
+            if self.definition.alignment == VerticalAlignment.bottom:
                 box.y = 0
-            elif self.definition.alignment.vertical == VerticalAlignment.center:
+            elif self.definition.alignment == VerticalAlignment.center:
                 box.y = (tallest / 2) - (box.rect.height / 2)
-            elif self.definition.alignment.vertical == VerticalAlignment.top:
+            elif self.definition.alignment == VerticalAlignment.top:
                 box.y = tallest - box.rect.height
             else:
                 raise AssertionError(
-                    f"{self.definition.alignment.vertical} "
+                    f"{self.definition.alignment} "
                     f"must be a member of {VerticalAlignment}."
                 )
 
         self.update_rect()
 
 
-class BoxColumn(BoxLayout):
+class BoxColumn(BoxLayoutBase):
     """Arranges boxes vertically. Boxes are arranged from bottom to top."""
+
+    definition_type: Type[BoxColumnDefinition] = BoxColumnDefinition
+
+    def __init__(
+        self,
+        definition: Optional[BoxColumnDefinition] = None,
+        boxes: Optional[Iterable[Box]] = None,
+    ):
+        """
+        Create a new BoxColumn.
+
+        :param definition: Definition to use to layout the boxes.
+        :param boxes: The boxes to be laid out. More can be added later using `self.add(box)`.
+        """
+        super(BoxColumn, self).__init__(definition, boxes)
+        self.definition: BoxColumnDefinition = self.definition
 
     def update_layout(self) -> None:
         """Update the position of all boxes in this Layout."""
@@ -158,15 +230,15 @@ class BoxColumn(BoxLayout):
             box.y = y_total
             y_total += box.rect.height + self.definition.spacing
 
-            if self.definition.alignment.horizontal == HorizontalAlignment.left:
+            if self.definition.alignment == HorizontalAlignment.left:
                 box.x = 0
-            elif self.definition.alignment.horizontal == HorizontalAlignment.center:
+            elif self.definition.alignment == HorizontalAlignment.center:
                 box.x = (widest / 2) - (box.rect.width / 2)
-            elif self.definition.alignment.horizontal == HorizontalAlignment.right:
+            elif self.definition.alignment == HorizontalAlignment.right:
                 box.x = widest - box.rect.width
             else:
                 raise AssertionError(
-                    f"{self.definition.alignment.horizontal} "
+                    f"{self.definition.alignment} "
                     f"must be a member of {HorizontalAlignment}."
                 )
 
@@ -174,7 +246,7 @@ class BoxColumn(BoxLayout):
 
 
 def build_rectangular_grid(
-    definition: BoxLayoutDefinition, boxes: List[Box]
+    definition: BoxGridDefinition, boxes: List[Box]
 ) -> Union[BoxRow, BoxColumn]:
     """
     Build a rectangular grid of boxes.
@@ -187,27 +259,32 @@ def build_rectangular_grid(
         This is passed to all of the layouts created, including the nested ones.
     :param boxes: Boxes to include.
     """
+    grid_type: Union[Type[BoxRow], Type[BoxColumn]]
+    element_type: Union[Type[BoxRow], Type[BoxColumn]]
     if definition.num_columns is not None:
         grid_type = BoxColumn
         element_type = BoxRow
         boxes_per_element = definition.num_columns
-        max_elements = definition.num_rows
+        max_elements_per_line = definition.num_rows
     elif definition.num_rows is not None:
         grid_type = BoxRow
         element_type = BoxColumn
         boxes_per_element = definition.num_rows
-        max_elements = definition.num_columns
+        max_elements_per_line = definition.num_columns
     else:
         raise ValueError(
             "Grid layout is undefined with both `num_columns` and `num_rows` undefined."
         )
 
-    # Maximum elements is one per box
-    max_elements = max_elements if max_elements is not None else len(boxes)
+    # Maximum number of grid elements per row/column is one element
+    # per box to be placed in the grid.
+    max_elements_per_line = (
+        max_elements_per_line if max_elements_per_line is not None else len(boxes)
+    )
     element_index = 0
     elements = []
     while True:
-        if element_index >= max_elements:
+        if element_index >= max_elements_per_line:
             # Reached max requested num_columns/num_rows
             break
 
@@ -220,26 +297,32 @@ def build_rectangular_grid(
             # Last element might have fewer than other elements, but that's ok.
             break
 
-        elements.append(element_type(definition, box_batch))
+        if element_type is BoxRow:
+            elements.append(BoxRow(definition.row_definition, box_batch))
+        else:
+            elements.append(BoxColumn(definition.column_definition, box_batch))
         element_index += 1
 
-    return grid_type(definition, elements)
+    if grid_type is BoxRow:
+        return BoxRow(definition.row_definition, elements)
+    else:
+        return BoxColumn(definition.column_definition, elements)
 
 
 def create_box_layout(
-    definition: BoxLayoutDefinition, boxes: List[Box]
+    definition: BoxGridDefinition, boxes: List[Box]
 ) -> Union[BoxRow, BoxColumn]:
     """
     Create a layout of boxes based on the given definition.
 
-    :param definition: BoxLayoutDefinition to use.
+    :param definition: BoxGridDefinition to use.
     :param boxes: Boxes to include in the layout.
     :return: BowRow or BoxColumn containing the given boxes.
     """
     width_height = definition.num_columns, definition.num_rows
     if width_height == (None, 1):
-        return BoxRow(definition, boxes)
+        return BoxRow(definition.row_definition, boxes)
     elif width_height == (1, None):
-        return BoxColumn(definition, boxes)
+        return BoxColumn(definition.column_definition, boxes)
     else:
         return build_rectangular_grid(definition, boxes)

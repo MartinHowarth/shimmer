@@ -9,7 +9,7 @@ from ..alignment import (
     RightTop,
 )
 from ..components.box import Box, BoxDefinition
-from ..components.box_layout import BoxColumn, BoxLayoutDefinition
+from ..components.box_layout import BoxColumn
 from ..components.draggable_box import DraggableBox, DraggableBoxDefinition
 from ..components.focus import make_focusable, VisualAndKeyboardFocusBox
 from ..components.font import FontDefinition, Calibri
@@ -103,7 +103,7 @@ class Window(MouseBox):
         self.focus_box: Optional[VisualAndKeyboardFocusBox] = None
 
         # Add the inner box, which is the main body of the window excluding the title bar.
-        self.body = BoxColumn(BoxLayoutDefinition())
+        self.body = BoxColumn()
         self.add(self.body)
 
         self.update_all()

@@ -6,7 +6,7 @@ from typing import Optional, Union, Dict, Set, Any
 
 from shimmer.components.box import BoxDefinition, Box
 from shimmer.components.box_layout import (
-    BoxLayoutDefinition,
+    BoxGridDefinition,
     BoxRow,
     BoxColumn,
     create_box_layout,
@@ -29,7 +29,7 @@ class MultipleChoiceButtonsDefinition(BoxDefinition):
     button: ButtonDefinition = field(default_factory=ButtonDefinition)
 
     # How to arrange the multiple buttons.
-    layout: BoxLayoutDefinition = field(default_factory=BoxLayoutDefinition)
+    layout: BoxGridDefinition = field(default_factory=BoxGridDefinition)
 
 
 class MultipleChoiceButtons(Box):

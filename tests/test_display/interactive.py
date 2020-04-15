@@ -34,7 +34,8 @@ class PassOrFailInput(ActiveBox):
         )
         description = TextBox(
             TextBoxDefinition(
-                text=dedent(test_description or "").strip(), width=window_width,
+                text=dedent(test_description or "").strip().replace("\n", " "),
+                width=window_width,
             )
         )
         keyboard_handler_definition = KeyboardHandlerDefinition(
