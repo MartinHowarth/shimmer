@@ -185,6 +185,7 @@ class MouseBox(ActiveBox):
         if self.definition.on_press_outside is None:
             return None
 
+        self.trace(f"on_press_outside with buttons {buttons}.")
         return self.definition.on_press_outside(
             box=self, x=x, y=y, buttons=buttons, modifiers=modifiers
         )

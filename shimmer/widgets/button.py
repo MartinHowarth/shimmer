@@ -254,7 +254,7 @@ class ToggleButton(Button):
             self._on_press(0, 0, 0, 0)
         # Otherwise no action needed to toggle the button.
 
-    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> None:
+    def _on_press(self, x: int, y: int, buttons: int, modifiers: int) -> Optional[bool]:
         """
         Called when the Box is clicked by the user.
 
@@ -263,9 +263,9 @@ class ToggleButton(Button):
         """
         self._is_toggled = not self._is_toggled
         if not self._is_toggled:
-            super(ToggleButton, self)._on_release(x, y, buttons, modifiers)
+            return super(ToggleButton, self)._on_release(x, y, buttons, modifiers)
         else:
-            super(ToggleButton, self)._on_press(x, y, buttons, modifiers)
+            return super(ToggleButton, self)._on_press(x, y, buttons, modifiers)
 
     def _should_handle_mouse_release(self, buttons: int) -> bool:
         """
@@ -275,12 +275,13 @@ class ToggleButton(Button):
         """
         return False
 
-    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> None:
+    def _on_unhover(self, x: int, y: int, dx: int, dy: int) -> Optional[bool]:
         """Change the button color and call the on_unhover callback."""
-        super(Button, self)._on_unhover(x, y, dx, dy)
+        result = super(Button, self)._on_unhover(x, y, dx, dy)
         if self.definition.hover_color is not None:
             # Reset the color back to what is should be based on the toggled state.
             if not self._is_toggled:
                 self._set_background_color(self.definition.base_color)
             elif self.definition.depressed_color is not None:
                 self._set_background_color(self.definition.depressed_color)
+        return result

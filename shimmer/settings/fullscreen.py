@@ -8,6 +8,8 @@ from ..widgets.button import ToggleButton, ButtonDefinition
 
 
 class FullscreenToggleButton(ToggleButton):
+    """A button that toggles the window between fullscreen and windowed."""
+
     def __init__(self, definition: Optional[ButtonDefinition] = None):
         """
         Create a button that toggles fullscreen on/off.

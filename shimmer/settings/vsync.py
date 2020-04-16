@@ -8,6 +8,8 @@ from ..widgets.button import ToggleButton, ButtonDefinition
 
 
 class VsyncToggleButton(ToggleButton):
+    """A toggle button that switches between vsync enabled and disabled."""
+
     def __init__(self, definition: Optional[ButtonDefinition] = None):
         """
         Create a button that toggles vsync on/off.

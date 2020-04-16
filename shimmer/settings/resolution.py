@@ -1,13 +1,17 @@
 """A settings menu button for choosing the window resolution."""
-from dataclasses import replace, dataclass
-from itertools import cycle
-from typing import Optional, List
+from dataclasses import dataclass
+from functools import partial
+from typing import List
 
 import pyglet
 
 import cocos
-from shimmer.components.mouse_box import EVENT_HANDLED
+from ..components.mouse_box import EVENT_HANDLED
 from ..widgets.button import Button, ButtonDefinition
+from ..widgets.pop_out_menu import (
+    DropDownMenuDefinition,
+    PopOutMenu,
+)
 
 
 @dataclass(frozen=True)
@@ -16,6 +20,10 @@ class ScreenResolution:
 
     width: int
     height: int
+
+    def __str__(self) -> str:
+        """String representation of a screen resolution."""
+        return f"Resolution: {self.width}x{self.height}"
 
 
 def get_possible_screen_modes() -> List[pyglet.canvas.base.ScreenMode]:
@@ -46,47 +54,40 @@ def get_current_resolution() -> ScreenResolution:
     return ScreenResolution(width=resolution_tuple[0], height=resolution_tuple[1])
 
 
-class ResolutionCycleButton(Button):
-    """A button that changes the game window size through the supported screen resolutions."""
+def set_resolution(resolution: ScreenResolution) -> None:
+    """Set the resolution of the game window."""
+    cocos.director.director.window.set_size(resolution.width, resolution.height)
 
-    text_template = "Resolution: {width}x{height}"
 
-    def __init__(self, definition: Optional[ButtonDefinition] = None):
-        """
-        Create a button that changes the screen resolution in a cycle.
+class ResolutionDropDownMenu(PopOutMenu):
+    """A drop down menu for setting the screen resolution."""
 
-        :param definition: Definition of the button style to use.
-        """
+    def __init__(self):
+        """Create a new ResolutionDropDownMenu."""
         current_resolution = get_current_resolution()
-        possible_resolutions = get_possible_screen_resolutions()
-        current_resolution_index = possible_resolutions.index(current_resolution)
-        resolutions_ordered = (
-            possible_resolutions[current_resolution_index + 1 :]
-            + possible_resolutions[: current_resolution_index + 1]
+        definition = DropDownMenuDefinition(
+            name=str(current_resolution), items=self.create_menu_items(),
         )
-        self.resolution_generator = cycle(resolutions_ordered)
+        super(ResolutionDropDownMenu, self).__init__(definition)
+        self.logger.info(f"items: {len(self.item_layout.get_children())}")
 
-        label = self.get_display_text_for_screen_resolution(current_resolution)
+    def create_menu_items(self) -> List[Button]:
+        """Create a button for each resolution setting."""
+        menu_items = []
 
-        if definition is None:
-            definition = ButtonDefinition()
+        for resolution in get_possible_screen_resolutions():
+            button = Button(
+                ButtonDefinition(
+                    text=str(resolution),
+                    on_press=partial(self.set_resolution, resolution=resolution),
+                )
+            )
+            menu_items.append(button)
+        return menu_items
 
-        definition = replace(definition, on_press=self.set_next_resolution, text=label,)
-        super(ResolutionCycleButton, self).__init__(definition)
-
-    def get_display_text_for_screen_resolution(
-        self, resolution: ScreenResolution
-    ) -> str:
-        """Generate the display text for this button based on the given ScreenResolution."""
-        return self.text_template.format(
-            width=resolution.width, height=resolution.height
-        )
-
-    def set_next_resolution(self, *_, **__):
+    def set_resolution(self, *_, resolution, **__):
         """Set the game window to be the next possible screen resolution in the cycle."""
-        next_resolution = next(self.resolution_generator)
-        self.set_text(self.get_display_text_for_screen_resolution(next_resolution))
-        cocos.director.director.window.set_size(
-            next_resolution.width, next_resolution.height
-        )
+        self.logger.info(f"Setting resolution to {resolution}.")
+        self.menu_button.set_text(str(resolution))
+        set_resolution(resolution)
         return EVENT_HANDLED
