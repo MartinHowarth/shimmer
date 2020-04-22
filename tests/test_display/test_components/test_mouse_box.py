@@ -89,3 +89,24 @@ def test_drag_callback_can_be_called(subtests, mock_gui, mock_mouse):
     definition.on_unhover.assert_not_called()
     definition.on_motion.assert_not_called()
     definition.on_drag.assert_called_once()
+
+
+@no_type_check  # Ignore typing because Mocks don't type nicely.
+def test_should_handle_coord(mock_gui, mock_mouse, subtests):
+    """Test that `additional_coord_check_fn` impacts whether a mouse event should be handled."""
+    definition = MouseBoxDefinition(
+        width=100, height=100, on_press=MagicMock(return_value=True),
+    )
+    box = MouseBox(definition)
+
+    with subtests.test(
+        f"additional_coord_check_fn returns False should not call callback."
+    ):
+        box.additional_coord_check_fn = lambda x, y: False
+        mock_mouse.click(box)
+        definition.on_press.assert_not_called()
+
+    with subtests.test(f"additional_coord_check_fn returns True should call callback."):
+        box.additional_coord_check_fn = lambda x, y: True
+        mock_mouse.click(box)
+        definition.on_press.assert_called_once()

@@ -7,7 +7,7 @@ from mock import MagicMock
 
 from shimmer.components.box import Box, BoxDefinition
 from shimmer.components.draggable_box import (
-    DraggableBox,
+    DragParentBox,
     DraggableBoxDefinition,
     SnapBox,
     SnapBoxDefinition,
@@ -15,6 +15,9 @@ from shimmer.components.draggable_box import (
 from shimmer.data_structures import Color
 
 
+# TODO test drag callbacks
+# TODO test boundary box with mock gui
+# TODO test direct draggable vs parent draggable (with boundary too)
 def create_base_box() -> Box:
     """Create a Box that has a background color."""
     box = Box(BoxDefinition(width=100, height=100, background_color=Color(100, 20, 20)))
@@ -24,7 +27,7 @@ def create_base_box() -> Box:
 def test_draggable_box(run_gui):
     """The box should be a draggable."""
     base_box = create_base_box()
-    box = DraggableBox(
+    box = DragParentBox(
         DraggableBoxDefinition(width=base_box.rect.width, height=base_box.rect.height)
     )
 
@@ -33,11 +36,30 @@ def test_draggable_box(run_gui):
     assert run_gui(test_draggable_box, base_box)
 
 
+def test_draggable_box_with_boundary(run_gui):
+    """The box should be a draggable but bounded inside the grey box."""
+    base_box = create_base_box()
+    boundary_box = Box(
+        BoxDefinition(width=450, height=200, background_color=Color(50, 50, 50))
+    )
+    box = DragParentBox(
+        DraggableBoxDefinition(
+            width=base_box.rect.width,
+            height=base_box.rect.height,
+            bounding_box=boundary_box,
+        )
+    )
+
+    base_box.add(box)
+
+    assert run_gui(test_draggable_box_with_boundary, boundary_box, base_box)
+
+
 def test_draggable_box_no_gui(subtests, mock_gui, mock_mouse):
     """Test that the draggable box changes position of parent."""
     base_box = create_base_box()
     base_box.position = 10, 10
-    box = DraggableBox(
+    box = DragParentBox(
         DraggableBoxDefinition(width=base_box.rect.width, height=base_box.rect.height)
     )
     base_box.add(box)
@@ -58,7 +80,7 @@ def test_draggable_box_snap_to_box(run_gui):
         snap_points.append(snap_box)
 
     base_box = create_base_box()
-    box = DraggableBox(
+    box = DragParentBox(
         DraggableBoxDefinition(
             width=base_box.rect.width,
             height=base_box.rect.height,
@@ -78,7 +100,7 @@ def test_draggable_box_snap_to_box_no_gui(subtests, mock_gui, mock_mouse):
     snap_box.position = 110, 110
 
     base_box = create_base_box()
-    box = DraggableBox(
+    box = DragParentBox(
         DraggableBoxDefinition(
             width=base_box.rect.width,
             height=base_box.rect.height,
@@ -131,7 +153,7 @@ def test_snap_box_can_receive(subtests, mock_gui, mock_mouse):
     snap_box.position = 110, 110
 
     base_box = create_base_box()
-    drag_box = DraggableBox(
+    drag_box = DragParentBox(
         DraggableBoxDefinition(
             width=base_box.rect.width,
             height=base_box.rect.height,
@@ -177,7 +199,7 @@ def test_snap_box_on_receive_on_release(subtests, mock_gui):
     )
 
     base_box = create_base_box()
-    drag_box = DraggableBox(
+    drag_box = DragParentBox(
         DraggableBoxDefinition(
             width=base_box.rect.width,
             height=base_box.rect.height,
@@ -235,11 +257,11 @@ def test_must_be_snapped(subtests, mock_gui, mock_mouse):
     snap_box2.position = 310, 310
 
     base_box = create_base_box()
-    drag_box = DraggableBox(
+    drag_box = DragParentBox(
         DraggableBoxDefinition(
             width=base_box.rect.width,
             height=base_box.rect.height,
-            must_be_snapped=True,
+            snap_on_release=True,
             snap_boxes=[snap_box, snap_box2],
         )
     )

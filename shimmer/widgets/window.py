@@ -10,7 +10,7 @@ from ..alignment import (
 )
 from ..components.box import Box, BoxDefinition
 from ..components.box_layout import BoxColumn
-from ..components.draggable_box import DraggableBox, DraggableBoxDefinition
+from ..components.draggable_box import DragParentBox, DraggableBoxDefinition
 from ..components.focus import make_focusable, VisualAndKeyboardFocusBox
 from ..components.font import FontDefinition, Calibri
 from ..components.mouse_box import (
@@ -100,7 +100,7 @@ class Window(MouseBox):
         self._title: Optional[TextBox] = None
         self._title_boxes: Dict[str, Box] = {}
         self._title_bar_background: Optional[Box] = None
-        self.focus_box: Optional[VisualAndKeyboardFocusBox] = None
+        self.focus_box: Optional[VisualAndKeyboardFocusBox] = make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
         self.body = BoxColumn()
@@ -120,7 +120,6 @@ class Window(MouseBox):
         self._update_title_bar_background()
         self.update_background()
         self._update_drag_zone()
-        self._update_focus_box()
 
     def update_rect(self):
         """
@@ -154,7 +153,7 @@ class Window(MouseBox):
 
     def on_child_size_changed(self):
         """Called when a child of the window changes size."""
-        self.update_rect()
+        super(Window, self).on_child_size_changed()
         self.update_all()
         self.body.align_anchor_with_other_anchor(
             self, CenterBottom, spacing=(0, self.definition.padding)
@@ -189,18 +188,6 @@ class Window(MouseBox):
                 if isinstance(box, Button)
             ]
         )
-
-    def _update_focus_box(self):
-        """Recreate the focus box of this window, preserving current focus state."""
-        was_focused = False
-        if self.focus_box is not None:
-            was_focused = self.focus_box.is_focused
-            self.remove(self.focus_box, no_resize=True)
-
-        self.focus_box = make_focusable(self)
-
-        if was_focused:
-            self.focus_box.take_focus()
 
     def _update_title(self):
         """Recreate the title."""
@@ -258,7 +245,7 @@ class Window(MouseBox):
         return self._title_boxes["close"]
 
     @property
-    def drag_box(self) -> DraggableBox:
+    def drag_box(self) -> DragParentBox:
         """Get the DraggableBox of this window."""
         return self._title_boxes["drag"]
 
@@ -273,7 +260,7 @@ class Window(MouseBox):
             width=self.rect.width - self._leftmost_title_bar_button_position,
             height=self.title_bar_height,
         )
-        self._update_title_bar_box("drag", DraggableBox(drag_box_definition))
+        self._update_title_bar_box("drag", DragParentBox(drag_box_definition))
         self._title_boxes["drag"].align_anchor_with_other_anchor(
             self, LeftTop,
         )

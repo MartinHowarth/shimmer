@@ -12,10 +12,10 @@ with.
 
 import logging
 from dataclasses import dataclass, replace, field
-from typing import List, Optional, Callable, Type
+from typing import List, Optional, Callable, Type, Union
 
 import cocos
-from .box import Box
+from .box import Box, DynamicSizeBehaviourEnum
 from .mouse_box import (
     MouseBox,
     MouseBoxDefinition,
@@ -331,7 +331,7 @@ def make_focusable(
     box: Box,
     definition: Optional[FocusBoxDefinition] = None,
     focus_type: Type[FocusBox] = VisualAndKeyboardFocusBox,
-) -> FocusBox:
+) -> Union[FocusBox, KeyboardFocusBox, VisualAndKeyboardFocusBox]:
     """
     Make the given Box focusable.
 
@@ -346,7 +346,9 @@ def make_focusable(
     if definition is None:
         definition = FocusBoxDefinition()
 
-    definition = replace(definition, width=box.rect.width, height=box.rect.height,)
+    definition = replace(
+        definition, dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
+    )
 
     focus_box = focus_type(definition)
     # Add the focus box as the last child so that its event handlers get pushed first.

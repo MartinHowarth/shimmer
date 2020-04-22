@@ -1,7 +1,7 @@
 """Definition of a Box that responds in a user-defined way to mouse events."""
 
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Callable
 
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
@@ -143,6 +143,9 @@ class MouseBox(ActiveBox):
         """
         super(MouseBox, self).__init__(definition)
         self.definition: MouseBoxDefinition = definition
+
+        # An optional extra check on whether to handle an event based on its coordinates.
+        self.additional_coord_check_fn: Optional[Callable[[int, int], bool]] = None
 
         # Whether the mouse is currently hovered over the Box or not.
         self._currently_hovered: bool = False
@@ -331,6 +334,18 @@ class MouseBox(ActiveBox):
         """
         return self._currently_dragging and self.definition.on_drag is not None
 
+    def should_handle_coord(self, x: int, y: int) -> bool:
+        """
+        Return True if this MouseBox should handle an event at the coordinate (x, y).
+
+        Set `additional_coord_check_fn` to add an additional check on the coordinates
+        as well as the basic check that the coordinates are inside this box. See ViewPortBox
+        for an example of this.
+        """
+        if self.additional_coord_check_fn is not None:
+            return self.additional_coord_check_fn(x, y) and self.contains_coord(x, y)
+        return self.contains_coord(x, y)
+
     def on_mouse_press(
         self, x: int, y: int, buttons: int, modifiers: int
     ) -> Optional[bool]:
@@ -343,7 +358,7 @@ class MouseBox(ActiveBox):
             return EVENT_UNHANDLED
 
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
-        if self.contains_coord(*coord):
+        if self.should_handle_coord(*coord):
             result = self._on_press(*coord, buttons, modifiers)
             if result is EVENT_HANDLED:
                 self.trace(f"on_mouse_press consumed.")
@@ -365,7 +380,7 @@ class MouseBox(ActiveBox):
             return EVENT_UNHANDLED
 
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
-        if self.contains_coord(*coord):
+        if self.should_handle_coord(*coord):
             result = self._on_release(*coord, buttons, modifiers)
             if result is EVENT_HANDLED:
                 self.trace(f"on_mouse_release consumed.")
@@ -389,7 +404,7 @@ class MouseBox(ActiveBox):
 
         result: Optional[bool] = None
         coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
-        if self.contains_coord(*coord):
+        if self.should_handle_coord(*coord):
             if not self._currently_hovered:
                 result = self._on_hover(*coord, dx, dy)
 

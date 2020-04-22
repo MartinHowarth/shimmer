@@ -5,7 +5,7 @@ from typing import Optional
 
 import cocos
 from shimmer.components.draggable_box import (
-    DraggableBox,
+    DragParentBox,
     DraggableBoxDefinition,
 )
 from shimmer.data_structures import Color, ActiveGreen
@@ -58,7 +58,7 @@ class InstructionDisplay(Button):
         self.instruction.on_execute_start = self.show_mask
         self.instruction.on_execute_complete = self.hide_mask
 
-        self.drag_anchor: Optional[DraggableBox] = None
+        self.drag_anchor: Optional[DragParentBox] = None
         self.executing_mask: Optional[cocos.layer.ColorLayer] = None
 
         super(InstructionDisplay, self).__init__(definition)
@@ -94,7 +94,7 @@ class InstructionDisplay(Button):
             self.drag_anchor = None
             return
 
-        self.drag_anchor = DraggableBox(
+        self.drag_anchor = DragParentBox(
             DraggableBoxDefinition(
                 width=self.definition.draggable_width, height=self.rect.height
             )

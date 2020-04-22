@@ -1,18 +1,11 @@
 """Test module for SpriteBox."""
 
-import os
 from pathlib import Path
 
 import pyglet
 import pytest
 
 from shimmer.components.sprite_box import SpriteBox, SpriteBoxDefinition
-
-
-@pytest.fixture
-def cat_path() -> Path:
-    """Absolute path to kitten.png."""
-    return Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "kitten.png"))
 
 
 @pytest.fixture
@@ -24,16 +17,15 @@ def cat_path_relative(cat_path: Path) -> Path:
     return Path(relative_path)
 
 
-@pytest.fixture
-def cat_image(cat_path: Path) -> pyglet.image.AbstractImage:
-    """Get kitten.png as a pyglet image object."""
-    with open(str(cat_path), "rb") as fi:
-        return pyglet.image.load(filename=cat_path.name, file=fi)
-
-
-def test_sprite_box_native_size(run_gui, cat_image):
+def test_sprite_box_native_size(run_gui, cat_image, subtests):
     """Test SpriteBox without scaling the image."""
     layer = SpriteBox(SpriteBoxDefinition(image=cat_image))
+
+    with subtests.test(
+        f"Check that the size of the SpriteBox matches the original image size."
+    ):
+        assert layer.rect.width == 577
+        assert layer.rect.height == 433
 
     assert run_gui(test_sprite_box_native_size, layer)
 

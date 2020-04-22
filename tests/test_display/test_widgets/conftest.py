@@ -5,6 +5,7 @@ from typing import Tuple, Callable, Any
 import pytest
 
 from shimmer.widgets.question_definition import OnQuestionChangeCallback
+from shimmer.widgets.slider import SliderButtonTextDefinition
 from shimmer.widgets.text_box import TextBox
 
 
@@ -24,3 +25,8 @@ def question_result_display(
         update_text_box("You selected: " + str(answer))
 
     return text_box, update_text_box_with_multi_question
+
+
+@pytest.fixture
+def null_slider_text_definition() -> SliderButtonTextDefinition:
+    return SliderButtonTextDefinition(None, None, None, None)

@@ -8,7 +8,7 @@ Also includes definitions for the following types of pop out menu:
   - Expand left menu
 """
 from dataclasses import dataclass, field, replace
-from typing import Iterable, Callable, Dict
+from typing import Iterable, Callable, Dict, Optional
 
 from .button import Button, ButtonDefinition, ToggleButton
 from ..alignment import HorizontalAlignment
@@ -25,17 +25,17 @@ class PopOutMenuDefinition:
 
     The anchors define in which position the menu items are displayed relative to the menu button.
 
-    :param name: The name to display on the menu button.
     :param menu_button_anchor: The anchor point of the menu button to use for alignment.
     :param item_layout_anchor: The anchor point of the menu item layout to align with the
         menu button anchor.
+    :param name: The name to display on the menu button.
     :param items: List of Boxes to include in the menu.
     :param style: A ButtonDefinition to use as a base for the menu button.
     """
 
-    name: str
     menu_button_anchor: PositionalAnchor
     item_layout_anchor: PositionalAnchor
+    name: Optional[str] = None
     items: Iterable[Box] = field(default_factory=tuple)
     style: ButtonDefinition = ButtonDefinition()
 

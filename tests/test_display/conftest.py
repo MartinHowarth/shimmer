@@ -1,8 +1,10 @@
 """Module defining global pytest fixtures for GUI tests."""
 
 import os
+from pathlib import Path
 from typing import Callable, List, Tuple, Any
 
+import pyglet
 import pytest
 
 import cocos
@@ -22,6 +24,7 @@ def mock_gui(mocker):
     # Have to patch director everywhere it's imported unfortunately.
     mock_director = MockDirector()
     mocker.patch("cocos.director.director", new=mock_director)
+    mocker.patch("cocos.scene.director", new=mock_director)
     mocker.patch("cocos.camera.director", new=mock_director)
     mocker.patch("cocos.layer.base_layers.director", new=mock_director)
     mocker.patch("cocos.layer.util_layers.director", new=mock_director)
@@ -73,7 +76,7 @@ def run_gui():
         cocos.director.director.run(scene)
         return input_handler.passed
 
-    window = cocos.director.director.init(resizable=True)
+    window = cocos.director.director.init(resizable=True, vsync=False)
     cocos.director.director.show_FPS = True
     cocos.director.director.window.set_location(100, 100)
     yield run_scene
@@ -95,3 +98,16 @@ def updatable_text_box() -> Tuple[TextBox, Callable[[Any], None]]:
         text_box.set_text(str(text))
 
     return text_box, update_text_box
+
+
+@pytest.fixture
+def cat_path() -> Path:
+    """Absolute path to kitten.png."""
+    return Path(os.path.join(os.path.dirname(os.path.realpath(__file__)), "kitten.png"))
+
+
+@pytest.fixture
+def cat_image(cat_path: Path) -> pyglet.image.AbstractImage:
+    """Get kitten.png as a pyglet image object."""
+    with open(str(cat_path), "rb") as fi:
+        return pyglet.image.load(filename=cat_path.name, file=fi)

@@ -9,7 +9,7 @@ from shimmer.inspections import (
 )
 
 
-def test_get_all_nodes_of_type(run_gui, subtests):
+def test_get_all_nodes_of_type(mock_gui, subtests):
     """Test that get_all_nodes_of_type filters nodes correctly."""
     # `run_gui` isn't needed for the display, but it must be initialised to be able to
     # create any cocos nodes.
@@ -36,7 +36,7 @@ def test_get_all_nodes_of_type(run_gui, subtests):
         assert all([x in nodes for x in [box1, box2]])
 
 
-def test_get_boxes_that_intersect_with(run_gui, subtests):
+def test_get_boxes_that_intersect_with(mock_gui, subtests):
     """Test that get_boxes_that_intersect_with filters nodes correctly."""
     # `run_gui` isn't needed for the display, but it must be initialised to be able to
     # create any cocos nodes.

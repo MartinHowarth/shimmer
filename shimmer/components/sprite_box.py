@@ -3,7 +3,6 @@ Module defining a Box that contains a cocos Sprite.
 
 This allows display of static images and animated sprites.
 """
-
 from dataclasses import dataclass
 from io import IOBase
 from pathlib import Path
@@ -12,8 +11,9 @@ from typing import Union, Optional
 import pyglet
 from pyglet.image import AbstractImage, Animation
 
+import cocos
 from cocos.sprite import Sprite
-from .box import Box, BoxDefinition
+from .box import Box, BoxDefinition, bounding_rect_of_rects
 
 ANIMATION_SUFFIXES = [".gif"]
 
@@ -88,14 +88,16 @@ class SpriteBox(Box):
 
     def __init__(self, definition: SpriteBoxDefinition):
         """Creates a new SpriteBox."""
+        # Create before init so we can calculate bounding_rect_of_children correctly.
+        self.sprite = Sprite(definition.image, anchor=(0, 0))
         super(SpriteBox, self).__init__(definition)
         self.definition: SpriteBoxDefinition = self.definition
-        self.sprite = Sprite(self.definition.image, anchor=(0, 0))
         self._update_sprite_scale()
         self.add(self.sprite)
 
     def _update_sprite_scale(self):
         """Scale the underlying Sprite such that it fits the size of this Box."""
+        # Don't do anything if the box size is 0 and therefore the image can't be seen anyway.
         if self.rect.width == 0 or self.rect.height == 0:
             self.sprite.scale_x = 1
             self.sprite.scale_y = 1
@@ -111,3 +113,15 @@ class SpriteBox(Box):
         """When the size of this Box changes, update the Sprite to fit the new size."""
         self._update_sprite_scale()
         super(SpriteBox, self).on_size_change()
+
+    def bounding_rect_of_children(self) -> cocos.rect.Rect:
+        """Get the rect containing all of this boxes children and also the cocos sprite."""
+        rect = super(SpriteBox, self).bounding_rect_of_children()
+        if self.sprite is None:
+            return rect
+
+        if self.definition.is_dynamic_sized:
+            self_rect = self.sprite.get_rect()
+        else:
+            self_rect = self.rect
+        return bounding_rect_of_rects((rect, self_rect))
