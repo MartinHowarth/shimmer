@@ -11,12 +11,24 @@ from shimmer.log_utils import log_exceptions
 log = logging.getLogger(__name__)
 
 
+Point2d = Tuple[int, int]
+
+
 def create_color_rect(width: int, height: int, color: Color) -> cocos.layer.ColorLayer:
     """Create a colored rectangle."""
-    log.debug(f"Creating color rect of size ({width=}, {height=}).")
+    log.debug(f"Creating color rect of size ({width=}, {height=}) with color {color=}")
     return cocos.layer.ColorLayer(
         *color.as_tuple_alpha(), width=int(width), height=int(height)
     )
+
+
+def real_to_virtual(x: int, y: int) -> Point2d:
+    """Convert the given coordinates from physical window coordinates to virtual coordinates."""
+    if cocos.director.director.autoscale:
+        coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
+    else:
+        coord = (x, y)
+    return coord
 
 
 class UpdatingNode(cocos.cocosnode.CocosNode):
@@ -67,6 +79,3 @@ class UpdatingNode(cocos.cocosnode.CocosNode):
         if self.dirty:
             self.dirty = False
             self._update(dt)
-
-
-Point2d = Tuple[int, int]

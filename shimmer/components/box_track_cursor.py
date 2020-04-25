@@ -3,9 +3,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import cocos
 from shimmer.components.box import ActiveBox, BoxDefinition
-from shimmer.primitives import Point2d
+from shimmer.primitives import Point2d, real_to_virtual
 
 
 @dataclass(frozen=True)
@@ -37,7 +36,7 @@ class BoxTrackCursor(ActiveBox):
 
         Does not capture the event, so it may be handled by other entities as well.
         """
-        coord = cocos.director.director.get_virtual_coordinates(x, y)
+        coord = real_to_virtual(x, y)
         # Position is relative to the parent, so need the mouse coordinates translated into the
         # local space of the parent to determine the correct relative position of this Box.
         self.position = self.parent.point_to_local(coord) + self.definition.offset

@@ -5,10 +5,9 @@ from typing import Optional, Protocol, Callable
 
 from pyglet.event import EVENT_UNHANDLED, EVENT_HANDLED
 
-import cocos
 from shimmer.components.box import ActiveBox, BoxDefinition
 from shimmer.helpers import bitwise_add, bitwise_remove, bitwise_contains
-from shimmer.primitives import Point2d
+from shimmer.primitives import real_to_virtual
 
 
 class MouseClickEventCallable(Protocol):
@@ -288,7 +287,7 @@ class MouseBox(ActiveBox):
         :param buttons: Int indicating which mouse buttons are pressed (see pyglet).
         :return: True if this Box should handle the mouse click press.
         """
-        return (
+        return self._event_handling_enabled() and (
             self.definition.on_press is not None
             or self.definition.on_press_outside is not None
         )
@@ -303,8 +302,9 @@ class MouseBox(ActiveBox):
         :param buttons: Int indicating which mouse buttons are pressed (see pyglet).
         :return: True if this Box should handle the mouse click release.
         """
-        return self.definition.on_release is not None and bitwise_contains(
-            self._currently_pressed, buttons
+        return self._event_handling_enabled() and (
+            self.definition.on_release is not None
+            and bitwise_contains(self._currently_pressed, buttons)
         )
 
     def _should_handle_mouse_hover(self) -> bool:
@@ -313,7 +313,7 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle mouse hover and unhover events.
         """
-        return (
+        return self._event_handling_enabled() and (
             self.definition.on_hover is not None
             or self.definition.on_unhover is not None
         )
@@ -324,7 +324,7 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle mouse motion events.
         """
-        return self.definition.on_motion is not None
+        return self._event_handling_enabled() and self.definition.on_motion is not None
 
     def _should_handle_mouse_drag(self) -> bool:
         """
@@ -332,7 +332,9 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle the mouse drag event.
         """
-        return self._currently_dragging and self.definition.on_drag is not None
+        return self._event_handling_enabled() and (
+            self._currently_dragging and self.definition.on_drag is not None
+        )
 
     def should_handle_coord(self, x: int, y: int) -> bool:
         """
@@ -357,7 +359,7 @@ class MouseBox(ActiveBox):
         if not self._should_handle_mouse_press(buttons):
             return EVENT_UNHANDLED
 
-        coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
+        coord = real_to_virtual(x, y)
         if self.should_handle_coord(*coord):
             result = self._on_press(*coord, buttons, modifiers)
             if result is EVENT_HANDLED:
@@ -372,14 +374,14 @@ class MouseBox(ActiveBox):
         self, x: int, y: int, buttons: int, modifiers: int
     ) -> Optional[bool]:
         """
-        Cocos director callback when the mouse is release.
+        Cocos director callback when the mouse is released.
 
         Checks if the event happened in the area defined by this Box and, if so, handles it.
         """
         if not self._should_handle_mouse_release(buttons):
             return EVENT_UNHANDLED
 
-        coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
+        coord = real_to_virtual(x, y)
         if self.should_handle_coord(*coord):
             result = self._on_release(*coord, buttons, modifiers)
             if result is EVENT_HANDLED:
@@ -403,7 +405,7 @@ class MouseBox(ActiveBox):
             return EVENT_UNHANDLED
 
         result: Optional[bool] = None
-        coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
+        coord = real_to_virtual(x, y)
         if self.should_handle_coord(*coord):
             if not self._currently_hovered:
                 result = self._on_hover(*coord, dx, dy)
@@ -434,7 +436,7 @@ class MouseBox(ActiveBox):
         # We don't check for this event being within the bounds of the Box because we instead rely
         # on the setting of `self._currently_dragging` via another method (e.g. click/release) to
         # control whether drag events should be handled or not.
-        coord: Point2d = cocos.director.director.get_virtual_coordinates(x, y)
+        coord = real_to_virtual(x, y)
         result = self._on_drag(*coord, dx, dy, buttons, modifiers)
         if result is EVENT_HANDLED:
             self.trace(f"on_mouse_drag consumed.")

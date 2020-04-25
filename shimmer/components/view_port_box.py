@@ -31,8 +31,6 @@ class ViewPortBox(Box):
     def __init__(self, definition: BoxDefinition):
         """Create a new ViewPortBox."""
         # Apply the color to the actual viewport box, not this parent holder.
-        # color = definition.background_color
-        # definition = replace(definition, background_color=None)
         super(ViewPortBox, self).__init__(
             BoxDefinition(dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children)
         )
@@ -47,6 +45,9 @@ class ViewPortBox(Box):
         # Init variables needed for interacting with GL scissor.
         self._old_scissor_enabled: bool = False
         self._old_scissor_args: Tuple[int, int, int, int] = (gl.GLint * 4)()
+
+    def set_size(self, width: Optional[int], height: Optional[int]) -> None:
+        self.viewport.set_size(width, height)
 
     def add(
         self,
@@ -63,11 +64,16 @@ class ViewPortBox(Box):
         See `Box.add` for parameter details.
         """
         super(ViewPortBox, self).add(child, z, name, no_resize)
-        # If the child would handle mouse events then add an additional check
-        # to ensure that the event is only handled when the mouse is inside the view port.
-        # This prevents the user interacting with an button that is invisible!
-        if isinstance(child, MouseBox):
-            child.additional_coord_check_fn = self.viewport.contains_coord
+
+        def set_additional_coord_check_fn(node: cocos.cocosnode.CocosNode):
+            # If the child (and grandchildren etc.) would handle mouse events then add an
+            # additional check to ensure that the event is only handled when the mouse is
+            # inside the view port.
+            # This prevents the user interacting with an button that is invisible!
+            if isinstance(node, MouseBox):
+                node.additional_coord_check_fn = self.viewport.contains_coord
+
+        child.walk(set_additional_coord_check_fn)
 
     def add_to_viewport(
         self,
@@ -96,12 +102,26 @@ class ViewPortBox(Box):
         # Get the viewport in coordinates relative to the screen which
         # is the coordinate system that pyglet works in.
         viewport_world_rect = self.viewport.world_rect
-        scissor_args = (
-            int(viewport_world_rect.x),
-            int(viewport_world_rect.y),
-            viewport_world_rect.width,
-            viewport_world_rect.height,
-        )
+        if cocos.director.director.autoscale:
+            # Because we're working directly with pyglet here we have to handle autoscaling
+            # ourselves which the director would normally handle.
+            w, h = cocos.director.director.get_window_size()
+            sx = cocos.director.director._usable_width / w
+            sy = cocos.director.director._usable_height / h
+            scissor_args = (
+                int(viewport_world_rect.x * sx + cocos.director.director._offset_x),
+                int(viewport_world_rect.y * sy + cocos.director.director._offset_y),
+                int(viewport_world_rect.width * sx),
+                int(viewport_world_rect.height * sy),
+            )
+        else:
+            scissor_args = (
+                int(viewport_world_rect.x),
+                int(viewport_world_rect.y),
+                int(viewport_world_rect.width),
+                int(viewport_world_rect.height),
+            )
+
         gl.glScissor(*scissor_args)
 
     def reset_gl_scissor(self):

@@ -21,7 +21,10 @@ SKIP_GUI_TESTS = "SKIP_GUI_TESTS" in os.environ
 @pytest.fixture
 def mock_gui(mocker):
     """Mock out the reliance of cocos on graphical elements existing."""
-    # Have to patch director everywhere it's imported unfortunately.
+    # Have to patch director everywhere it's imported because the MockDirector relies on
+    # cocos being imported first. That means we can't mock out the actual director before it
+    # is created so each module ends up with a unique reference to the original one which
+    # we can't patch in one place.
     mock_director = MockDirector()
     mocker.patch("cocos.director.director", new=mock_director)
     mocker.patch("cocos.scene.director", new=mock_director)
@@ -31,7 +34,7 @@ def mock_gui(mocker):
     mocker.patch("pyglet.window.Window", new=MockWindow)
 
     # Disable autoscale so cocos doesn't try and use gl to scale the window.
-    cocos.director.director.init(autoscale=False)
+    mock_director.init(autoscale=False)
 
 
 @pytest.fixture
@@ -76,7 +79,7 @@ def run_gui():
         cocos.director.director.run(scene)
         return input_handler.passed
 
-    window = cocos.director.director.init(resizable=True, vsync=False)
+    window = cocos.director.director.init(resizable=True, vsync=False, autoscale=False)
     cocos.director.director.show_FPS = True
     cocos.director.director.window.set_location(100, 100)
     yield run_scene

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field, replace
 from typing import Iterable, Callable, Dict, Optional
 
 from .button import Button, ButtonDefinition, ToggleButton
+from .scrollable_box import ScrollableBoxDefinition, ScrollableBox
 from ..alignment import HorizontalAlignment
 from ..alignment import RightTop, LeftTop, LeftBottom, PositionalAnchor
 from ..components.box import Box, BoxDefinition
@@ -19,7 +20,7 @@ from ..components.mouse_box import MouseClickEventCallable, EVENT_HANDLED
 
 
 @dataclass(frozen=True)
-class PopOutMenuDefinition:
+class PopOutMenuDefinition(BoxDefinition):
     """
     Definition of a menu which shows the menu choices when it is clicked on.
 
@@ -33,11 +34,13 @@ class PopOutMenuDefinition:
     :param style: A ButtonDefinition to use as a base for the menu button.
     """
 
-    menu_button_anchor: PositionalAnchor
-    item_layout_anchor: PositionalAnchor
+    menu_button_anchor: PositionalAnchor = LeftBottom
+    item_layout_anchor: PositionalAnchor = LeftTop
     name: Optional[str] = None
     items: Iterable[Box] = field(default_factory=tuple)
     style: ButtonDefinition = ButtonDefinition()
+    scrollable: bool = False
+    scrollable_height: int = 200
 
 
 @dataclass(frozen=True)
@@ -100,28 +103,44 @@ class PopOutMenu(Box):
 
     def __init__(self, definition: PopOutMenuDefinition):
         """Create a new PopOutMenu."""
-        super(PopOutMenu, self).__init__(BoxDefinition(log_id=definition.name))
-        self.menu_definition = definition
+        # original_width, original_height = definition.width, definition.height
+        # definition = replace(definition, width=1, height=1)
+        super(PopOutMenu, self).__init__(definition)
+        self.definition: PopOutMenuDefinition = self.definition
+        # self.menu_definition = definition
         self._expanded = False
+        self.scrollable_box: Optional[ScrollableBox] = None
 
         self.menu_button = ToggleButton(self.get_menu_button_definition())
         self.item_layout = BoxColumn(
             BoxColumnDefinition(spacing=0, alignment=HorizontalAlignment.left),
-            boxes=self.menu_definition.items,
+            boxes=self.definition.items,
         )
-        # Do no add the item_layout now. Add/remove it when expanding/collapsing the menu.
+        # Add the menu button with a high z value to appear above the children and receive
+        # events first.
         self.add(self.menu_button)
-        self.item_layout.align_anchor_with_other_anchor(
-            self.menu_button,
-            self.menu_definition.menu_button_anchor,
-            self.menu_definition.item_layout_anchor,
-        )
+
+        # Do not add the item_layout/scrollable_box now so it is not visible initially.
+        # Add/remove it when expanding/collapsing the menu.
+        if self.definition.scrollable:
+            self.scrollable_box = ScrollableBox(
+                ScrollableBoxDefinition(height=self.definition.scrollable_height)
+            )
+            self.scrollable_box.add(self.item_layout)
+            self.item_layout.align_anchor_with_other_anchor(
+                self.scrollable_box, LeftTop
+            )
+            child = self.scrollable_box
+        else:
+            child = self.item_layout
+        self.add(child)
+        child.make_invisible()
 
     def get_menu_button_definition(self) -> ButtonDefinition:
         """Build the ButtonDefinition to use for the main menu button."""
         return replace(
-            self.menu_definition.style,
-            text=self.menu_definition.name,
+            self.definition.style,
+            text=self.definition.name,
             on_press=self.expand_menu,
             on_release=self.collapse_menu,
             # Collapse the menu on a press outside of the menu.
@@ -135,7 +154,16 @@ class PopOutMenu(Box):
         if self._expanded is False:
             self.debug(f"Expanding pop out menu.")
             self._expanded = True
-            self.add(self.item_layout)
+            if self.scrollable_box is not None:
+                child = self.scrollable_box
+            else:
+                child = self.item_layout
+            child.make_visible()
+            child.align_anchor_with_other_anchor(
+                self.menu_button,
+                self.definition.menu_button_anchor,
+                self.definition.item_layout_anchor,
+            )
         return EVENT_HANDLED
 
     def collapse_menu(self, *_, **__):
@@ -143,7 +171,11 @@ class PopOutMenu(Box):
         if self._expanded is True:
             self.debug(f"Collapsing pop out menu.")
             self._expanded = False
-            self.remove(self.item_layout)
+            if self.scrollable_box is not None:
+                child = self.scrollable_box
+            else:
+                child = self.item_layout
+            child.make_invisible()
         return EVENT_HANDLED
 
     def on_click_outside(self, *_, **__):
@@ -185,6 +217,6 @@ def construct_pop_out_menu_from_callables(
         )
         item_buttons.append(Button(button_definition))
 
-    menu_definition = replace(definition, items=item_buttons)
-    menu = PopOutMenu(menu_definition)
+    definition = replace(definition, items=item_buttons)
+    menu = PopOutMenu(definition)
     return menu

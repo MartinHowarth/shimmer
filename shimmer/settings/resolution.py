@@ -6,6 +6,7 @@ from typing import List
 import pyglet
 
 import cocos
+from ..components.box import DynamicSizeBehaviourEnum
 from ..components.mouse_box import EVENT_HANDLED
 from ..widgets.button import Button, ButtonDefinition
 from ..widgets.pop_out_menu import (
@@ -66,10 +67,11 @@ class ResolutionDropDownMenu(PopOutMenu):
         """Create a new ResolutionDropDownMenu."""
         current_resolution = get_current_resolution()
         definition = DropDownMenuDefinition(
-            name=str(current_resolution), items=self.create_menu_items(),
+            name=str(current_resolution),
+            items=self.create_menu_items(),
+            scrollable=True,
         )
         super(ResolutionDropDownMenu, self).__init__(definition)
-        self.logger.info(f"items: {len(self.item_layout.get_children())}")
 
     def create_menu_items(self) -> List[Button]:
         """Create a button for each resolution setting."""
@@ -80,6 +82,10 @@ class ResolutionDropDownMenu(PopOutMenu):
                 ButtonDefinition(
                     text=str(resolution),
                     on_press=partial(self.set_resolution, resolution=resolution),
+                    height=30,
+                    width=None,
+                    dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
+                    log_id=str(resolution),
                 )
             )
             menu_items.append(button)

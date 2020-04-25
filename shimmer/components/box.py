@@ -191,6 +191,10 @@ class Box(cocos.cocosnode.CocosNode):
             *self.point_to_world((0, 0)), self.rect.width, self.rect.height
         )
 
+    def set_size(self, width: Optional[int], height: Optional[int]) -> None:
+        self.definition = replace(self.definition, width=width, height=height)
+        self.update_rect()
+
     def _calculate_current_size(self) -> None:
         """
         Calculate what the size of this box should be.
@@ -535,6 +539,18 @@ class Box(cocos.cocosnode.CocosNode):
 
         return bounding_local_rect
 
+    def make_invisible(self):
+        def set_visible_false(node: cocos.cocosnode.CocosNode):
+            node.visible = False
+
+        self.walk(set_visible_false)
+
+    def make_visible(self):
+        def set_visible_true(node: cocos.cocosnode.CocosNode):
+            node.visible = True
+
+        self.walk(set_visible_true)
+
 
 class ActiveBox(Box):
     """A Box that adds itself to the cocos director event handlers when entering the scene."""
@@ -552,6 +568,18 @@ class ActiveBox(Box):
         """Called every time just before the node exits the stage."""
         cocos.director.director.window.remove_handlers(self)
         super(ActiveBox, self).on_exit()
+
+    def _event_handling_enabled(self) -> bool:
+        """
+        Return True if this Box should handle events.
+
+        This is only relevant when the box is already in the scene and has had its event handlers
+        added to the stack.
+
+        This is intended to provide a simple way to turn event handling on and off for a Box
+        without removing/adding it from the scene (which is expensive).
+        """
+        return self.visible
 
 
 def bounding_rect_of_rects(rects: Iterable[cocos.rect.Rect]) -> cocos.rect.Rect:

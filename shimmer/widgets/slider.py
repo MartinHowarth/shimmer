@@ -126,6 +126,7 @@ class Slider(Box):
 
     definition_type = SliderDefinition
 
+    # TODO handle mouse press on slider background to set value.
     def __init__(self, definition: SliderDefinition):
         """Create a new Slider."""
         super().__init__(definition)
