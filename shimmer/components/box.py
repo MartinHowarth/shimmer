@@ -582,6 +582,10 @@ class Box(cocos.cocosnode.CocosNode):
 class ActiveBox(Box):
     """A Box that adds itself to the cocos director event handlers when entering the scene."""
 
+    # def __init__(self, *args, **kwargs):
+    #     super(ActiveBox, self).__init__(*args, **kwargs)
+    #     self.enabled: bool = True
+
     def on_enter(self):
         """Called every time just before the node enters the stage."""
         # Deliberately push handlers for this node before calling for sub nodes. This causes

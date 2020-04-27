@@ -136,7 +136,6 @@ class Slider(Box):
         self._drag_box_minmax_position: Tuple[int, int] = (0, 0)
 
         widget_width, widget_height = self._widget_size()
-        self.debug(f"{widget_height=}, {widget_width=}")
         self.increment_button = Button(
             replace(
                 self.definition.button_style,
@@ -173,8 +172,7 @@ class Slider(Box):
         )
         self.add(self.drag_box)
         self._calculate_drag_box_minmax_position()
-        self.update_slider_position()
-        self.info(f"self size is {self.rect=}")
+        self.update_indicator_position()
 
     @property
     def value(self) -> float:
@@ -211,7 +209,7 @@ class Slider(Box):
         if self.definition.on_change is not None:
             self.definition.on_change(self._value)
 
-        self.update_slider_position()
+        self.update_indicator_position()
 
     def on_size_change(self):
         """
@@ -221,7 +219,7 @@ class Slider(Box):
         """
         super(Slider, self).on_size_change()
         self._calculate_drag_box_minmax_position()
-        self.update_slider_position()
+        self.update_indicator_position()
 
     def _calculate_drag_box_minmax_position(self):
         """
@@ -311,7 +309,7 @@ class Slider(Box):
 
         self.value = self.definition.minimum + (ratio * self.definition.range)
 
-    def update_slider_position(self):
+    def update_indicator_position(self):
         """
         Set the position of the slider drag box to correspond with the current value.
 

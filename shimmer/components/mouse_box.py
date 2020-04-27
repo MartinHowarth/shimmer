@@ -342,7 +342,7 @@ class MouseBox(ActiveBox):
         for an example of this.
         """
         if self.additional_coord_check_fn is not None:
-            return self.additional_coord_check_fn(x, y) and self.contains_coord(x, y)
+            return self.contains_coord(x, y) and self.additional_coord_check_fn(x, y)
         return self.contains_coord(x, y)
 
     def on_mouse_press(

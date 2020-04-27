@@ -105,7 +105,7 @@ class PopOutMenu(Box):
         """Create a new PopOutMenu."""
         super(PopOutMenu, self).__init__(definition)
         self.definition: PopOutMenuDefinition = self.definition
-        self._expanded = False
+        self._expanded: bool = False
         self.scrollable_box: Optional[ScrollableBox] = None
 
         self.menu_button = ToggleButton(self.get_menu_button_definition())
@@ -121,15 +121,36 @@ class PopOutMenu(Box):
         # Add/remove it when expanding/collapsing the menu.
         if self.definition.scrollable:
             self.scrollable_box = ScrollableBox(
-                ScrollableBoxDefinition(height=self.definition.scrollable_height)
+                ScrollableBoxDefinition(
+                    height=self.definition.scrollable_height,
+                    width=self.item_layout.rect.width,
+                )
             )
             self.scrollable_box.add(self.item_layout)
             # Align with top-left. This is needed if the size of the item layout is smaller
             # than `self.definition.scrollable_height` otherwise a gap appears between the menu
             # button and the actual items.
             self.item_layout.align_anchor_with_other_anchor(
-                self.scrollable_box, LeftTop
+                self.scrollable_box.view_port_box, LeftTop
             )
+            # Start with the slider at the top.
+            self.scrollable_box.vertical_scrollbar.value = (
+                self.scrollable_box.definition.slider_definition.maximum
+            )
+        #     child = self.scrollable_box
+        # else:
+        #     child = self.item_layout
+        # child.align_anchor_with_other_anchor(
+        #     self.menu_button,
+        #     self.definition.menu_button_anchor,
+        #     self.definition.item_layout_anchor,
+        # )
+        self.arrange_children()
+        # self.add(child)
+        # self._hide_items()
+
+    def arrange_children(self):
+        if self.scrollable_box is not None:
             child = self.scrollable_box
         else:
             child = self.item_layout
@@ -138,8 +159,6 @@ class PopOutMenu(Box):
             self.definition.menu_button_anchor,
             self.definition.item_layout_anchor,
         )
-        # self.add(child)
-        # self._hide_items()
 
     #
     # def disable(self):
@@ -174,16 +193,17 @@ class PopOutMenu(Box):
             else:
                 child = self.item_layout
             self.add(child)
-            child.align_anchor_with_other_anchor(
-                self.menu_button,
-                self.definition.menu_button_anchor,
-                self.definition.item_layout_anchor,
-            )
+            self.arrange_children()
             self.debug(f"{self.menu_button.position=}")
             self.debug(f"{self.menu_button.rect=}")
             self.debug(f"{child.position=}")
-            self.debug(f"{child.rect=}")
-            child.y = -child.rect.height
+            self.debug(f"{child.world_rect=}")
+            self.debug(f"{child.view_port_box.position=}")
+            self.debug(f"{child.view_port_box.world_rect=}")
+            self.debug(f"{child.view_port_box.viewport.position=}")
+            self.debug(f"{child.view_port_box.viewport.world_rect=}")
+            self.debug(f"{child.world_rect=}")
+            self.debug(f"{child.vertical_scrollbar.world_rect=}")
         return EVENT_HANDLED
 
     def collapse_menu(self, *_, **__):

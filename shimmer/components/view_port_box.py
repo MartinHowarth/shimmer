@@ -39,7 +39,7 @@ class ViewPortBox(Box):
         # Make the viewport be on top so it (and its children) get events before
         # the other children. For example, this enables the viewport to be
         # draggable over other children who would otherwise consume the mouse events.
-        self.add(self.viewport, z=100)
+        # self.add(self.viewport, z=100)
 
         # Init variables needed for interacting with GL scissor.
         self._old_scissor_enabled: bool = False
@@ -49,6 +49,8 @@ class ViewPortBox(Box):
         """Set the size of the viewport."""
         self.trace(f"Setting viewport size: {width=}, {height=}")
         self.viewport.set_size(width, height)
+        self.trace(f"{self.rect=}")
+        self.trace(f"{self.viewport.rect=}")
 
     def add(
         self,
@@ -72,23 +74,24 @@ class ViewPortBox(Box):
             # inside the view port.
             # This prevents the user interacting with an button that is invisible!
             if isinstance(node, MouseBox):
-                node.additional_coord_check_fn = self.viewport.contains_coord
+                node.additional_coord_check_fn = self.point_is_visible
 
         child.walk(set_additional_coord_check_fn)
 
-    def add_to_viewport(
-        self,
-        child: cocos.cocosnode.CocosNode,
-        z: int = 0,
-        name: Optional[str] = None,
-        no_resize: bool = False,
-    ) -> None:
-        """
-        Add a child to the actual viewport.
-
-        See `self.add` for parameter details.
-        """
-        self.viewport.add(child, z, name, no_resize)
+    #
+    # def add_to_viewport(
+    #     self,
+    #     child: cocos.cocosnode.CocosNode,
+    #     z: int = 0,
+    #     name: Optional[str] = None,
+    #     no_resize: bool = False,
+    # ) -> None:
+    #     """
+    #     Add a child to the actual viewport.
+    #
+    #     See `self.add` for parameter details.
+    #     """
+    #     self.viewport.add(child, z, name, no_resize)
 
     def apply_gl_scissor(self):
         """Set the OpenGL scissor test state."""
@@ -102,7 +105,7 @@ class ViewPortBox(Box):
 
         # Get the viewport in coordinates relative to the screen which
         # is the coordinate system that pyglet works in.
-        viewport_world_rect = self.viewport.world_rect
+        viewport_world_rect = self.viewport_world_rect
         if cocos.director.director.autoscale:
             # Because we're working directly with pyglet here we have to handle autoscaling
             # ourselves which the director would normally handle.
@@ -137,6 +140,17 @@ class ViewPortBox(Box):
         super().visit()
         self.reset_gl_scissor()
 
+    @property
+    def viewport_world_rect(self) -> cocos.rect.Rect:
+        return cocos.rect.Rect(
+            *self.point_to_world(self.viewport.position),
+            self.viewport.rect.width,
+            self.viewport.rect.height,
+        )
+
+    def point_is_visible(self, x: int, y: int) -> bool:
+        return self.viewport_world_rect.contains(x, y)
+
     def box_is_visible(self, box: Box) -> bool:
         """
         Return True if the given box is visible within the viewport area.
@@ -144,4 +158,4 @@ class ViewPortBox(Box):
         Note that the Box must be a child (or grandchild, etc.) of this
         ViewPortBox to be affected by the viewport.
         """
-        return box.world_rect.intersects(self.viewport.world_rect)
+        return box.world_rect.intersects(self.viewport_world_rect)
