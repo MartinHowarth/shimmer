@@ -148,6 +148,7 @@ class BoxLayoutBase(Box):
     @abstractmethod
     def update_layout(self) -> None:
         """Update the position of all boxes in this Layout."""
+        # TODO change to use `arrange_children` instead now that that exists?
 
 
 class BoxRow(BoxLayoutBase):

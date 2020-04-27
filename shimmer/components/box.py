@@ -104,6 +104,9 @@ class Box(cocos.cocosnode.CocosNode):
         log_id = definition.log_id or str(self.__class__.__name__)
         self.logger = logging.getLogger(log_id)
 
+        # self.enabled = True
+        self._resize_loop_counter: int = 0
+
         self.definition = definition
         self._width: int = 0
         self._height: int = 0
@@ -192,6 +195,12 @@ class Box(cocos.cocosnode.CocosNode):
         )
 
     def set_size(self, width: Optional[int], height: Optional[int]) -> None:
+        """
+        Set this Box to a new size.
+
+        This updates the definition of this Box, but does not affect other boxes created from
+        the same definition.
+        """
         self.definition = replace(self.definition, width=width, height=height)
         self.update_rect()
 
@@ -213,6 +222,9 @@ class Box(cocos.cocosnode.CocosNode):
                 if self.parent is not None and isinstance(self.parent, Box):
                     dynamic_rect = self.parent.rect
                 else:
+                    # Can't include trace information here because that includes the size of
+                    # this box, which is what is currently being calculated.
+                    # Therefore access the logger directly.
                     self.logger.debug(
                         f"Cannot match size to non-existent or non-Box parent."
                     )
@@ -246,6 +258,20 @@ class Box(cocos.cocosnode.CocosNode):
             self._rect.set_size((self._width, self._height))
             self.on_size_change()
 
+    def arrange_children(self):
+        """
+        Move the children of this Box into the desired locations.
+
+        Should be overridden in subclasses to define the desired layout. See `Window` for
+        an example.
+
+        Called when this Box changes size.
+        """
+        # When the arrangement of children changes the bounding rect of this Box may have changed
+        # so trigger an update of this Box's rect.
+        # This should be called after any re-arrangement of children done.
+        self.update_rect()
+
     def on_size_change(self):
         """
         Called when the size of the Box changes.
@@ -255,12 +281,23 @@ class Box(cocos.cocosnode.CocosNode):
         For manually resized boxes, `update_rect` should be called first, which will trigger this
         function.
         """
+        if self._resize_loop_counter > 5:
+            self.warning(
+                f"Resize loop detected! {self._resize_loop_counter=}"
+                f"This is likely caused by this box being dynamically sized based on "
+                f"a parent/child which is also dynamically sized based on this Box."
+            )
+
+        self._resize_loop_counter += 1
+        self.trace(f"Size changed to {self.rect}.")
         self.update_background()
+        self.arrange_children()
         if isinstance(self.parent, Box):
             self.parent.on_child_size_changed()
         for child in self.get_children():
             if isinstance(child, Box):
                 child.on_parent_size_changed()
+        self._resize_loop_counter -= 1
 
     def on_child_size_changed(self):
         """
@@ -381,6 +418,7 @@ class Box(cocos.cocosnode.CocosNode):
 
         If the background color is None, then the background is removed.
         """
+        # Cannot edit the size of a cocos ColorLayer so have to re-create the background.
         # Remove the old background
         if self._background is not None:
             self.remove(self._background, no_resize=True)
@@ -432,9 +470,10 @@ class Box(cocos.cocosnode.CocosNode):
             # If this Box is not in the scene, then we cannot calculate relative positioning
             # reliably. However, it still works accurately for Boxes that are being aligned
             # with their parent or with siblings. Therefore only log rather than error out.
-            self.logger.debug(
+            self.trace(
                 f"This Box is not in the scene, "
-                f"so setting relative positioning may by unstable. {self=}, {other=}"
+                f"so setting relative positioning between unrelated boxes may be unstable. "
+                f"{self=}, {other=}"
             )
 
         # Get the anchor coordinates in each Boxes coordinate space.
@@ -539,18 +578,6 @@ class Box(cocos.cocosnode.CocosNode):
 
         return bounding_local_rect
 
-    def make_invisible(self):
-        def set_visible_false(node: cocos.cocosnode.CocosNode):
-            node.visible = False
-
-        self.walk(set_visible_false)
-
-    def make_visible(self):
-        def set_visible_true(node: cocos.cocosnode.CocosNode):
-            node.visible = True
-
-        self.walk(set_visible_true)
-
 
 class ActiveBox(Box):
     """A Box that adds itself to the cocos director event handlers when entering the scene."""
@@ -569,17 +596,17 @@ class ActiveBox(Box):
         cocos.director.director.window.remove_handlers(self)
         super(ActiveBox, self).on_exit()
 
-    def _event_handling_enabled(self) -> bool:
-        """
-        Return True if this Box should handle events.
-
-        This is only relevant when the box is already in the scene and has had its event handlers
-        added to the stack.
-
-        This is intended to provide a simple way to turn event handling on and off for a Box
-        without removing/adding it from the scene (which is expensive).
-        """
-        return self.visible
+    # def _event_handling_enabled(self) -> bool:
+    #     """
+    #     Return True if this Box should handle events.
+    #
+    #     This is only relevant when the box is already in the scene and has had its event handlers
+    #     added to the stack.
+    #
+    #     This is intended to provide a simple way to turn event handling on and off for a Box
+    #     without removing/adding it from the scene (which is expensive).
+    #     """
+    #     return self.enabled
 
 
 def bounding_rect_of_rects(rects: Iterable[cocos.rect.Rect]) -> cocos.rect.Rect:

@@ -47,14 +47,22 @@ def test_scrollable_box_vertical_only(
     )
     scrollable_box.add(child_box)
 
-    with subtests.test(f"Test that initial position is as expected."):
+    with subtests.test(f"Test size of scrollable box is only the visible area."):
+        assert scrollable_box.rect.width == 400
+        assert scrollable_box.rect.height == 200
+
+    with subtests.test(
+        f"Test that initial position is as expected (at max vertical position)."
+    ):
         assert scrollable_box.position == (0, 0)
-        assert scrollable_box.view_port_box.position == (0, 0)
-        assert scrollable_box.view_port_box.viewport.position == (0, 0)
+        assert scrollable_box.view_port_box.position == (0, -600)
+        assert scrollable_box.view_port_box.viewport.position == (0, 600)
         assert child_box.position == (0, 0)
 
-    with subtests.test(f"Test that scrolling up once results in correct box movement."):
-        scrollable_box.vertical_scrollbar.increment(0.5)
+    with subtests.test(
+        f"Test that scrolling down once results in correct box movement."
+    ):
+        scrollable_box.vertical_scrollbar.decrement(0.5)
 
         # Scrollable box itself should not move.
         assert scrollable_box.position == (0, 0)
@@ -65,17 +73,21 @@ def test_scrollable_box_vertical_only(
         # Actual view port should move up.
         assert scrollable_box.view_port_box.viewport.position == (0, 300)
 
-    with subtests.test(f"Test that scrolling down results in correct box movement."):
-        scrollable_box.vertical_scrollbar.decrement(0.1)
+    with subtests.test(f"Test that scrolling up results in correct box movement."):
+        scrollable_box.vertical_scrollbar.increment(0.1)
 
         # Scrollable box itself should not move.
         assert scrollable_box.position == (0, 0)
         # Obscured children should not move
         assert child_box.position == (0, 0)
         # View port box should move down.
-        assert scrollable_box.view_port_box.position == (0, -240)
+        assert scrollable_box.view_port_box.position == (0, -360)
         # Actual view port should move up.
-        assert scrollable_box.view_port_box.viewport.position == (0, 240)
+        assert scrollable_box.view_port_box.viewport.position == (0, 360)
+
+    with subtests.test(f"Test size of scrollable box is still only the visible area."):
+        assert scrollable_box.rect.width == 400
+        assert scrollable_box.rect.height == 200
 
 
 def test_scrollable_box_both_directions(
@@ -106,14 +118,20 @@ def test_scrollable_box_both_directions(
     )
     scrollable_box.add(child_box)
 
+    with subtests.test(f"Test size of scrollable box is still only the visible area."):
+        assert scrollable_box.rect.width == 400
+        assert scrollable_box.rect.height == 200
+
     with subtests.test(f"Test that initial position is as expected."):
         assert scrollable_box.position == (0, 0)
-        assert scrollable_box.view_port_box.position == (0, scrollbar_width)
-        assert scrollable_box.view_port_box.viewport.position == (0, 0)
+        assert scrollable_box.view_port_box.position == (0, -600)
+        assert scrollable_box.view_port_box.viewport.position == (0, 640)
         assert child_box.position == (0, 0)
 
-    with subtests.test(f"Test that scrolling up once results in correct box movement."):
-        scrollable_box.vertical_scrollbar.increment(0.5)
+    with subtests.test(
+        f"Test that scrolling down once results in correct box movement."
+    ):
+        scrollable_box.vertical_scrollbar.decrement(0.5)
 
         # Scrollable box itself should not move.
         assert scrollable_box.position == (0, 0)
@@ -124,17 +142,17 @@ def test_scrollable_box_both_directions(
         # Actual view port should move up.
         assert scrollable_box.view_port_box.viewport.position == (0, 320)
 
-    with subtests.test(f"Test that scrolling down results in correct box movement."):
-        scrollable_box.vertical_scrollbar.decrement(0.1)
+    with subtests.test(f"Test that scrolling up results in correct box movement."):
+        scrollable_box.vertical_scrollbar.increment(0.1)
 
         # Scrollable box itself should not move.
         assert scrollable_box.position == (0, 0)
         # Obscured children should not move
         assert child_box.position == (0, 0)
         # View port box should move down.
-        assert scrollable_box.view_port_box.position == (0, -216)
+        assert scrollable_box.view_port_box.position == (0, -344)
         # Actual view port should move up.
-        assert scrollable_box.view_port_box.viewport.position == (0, 256)
+        assert scrollable_box.view_port_box.viewport.position == (0, 384)
 
     with subtests.test(
         f"Test that scrolling right once results in correct box movement."
@@ -146,9 +164,9 @@ def test_scrollable_box_both_directions(
         # Obscured children should not move
         assert child_box.position == (0, 0)
         # View port box should move down.
-        assert scrollable_box.view_port_box.position == (-220, -216)
+        assert scrollable_box.view_port_box.position == (-220, -344)
         # Actual view port should move up.
-        assert scrollable_box.view_port_box.viewport.position == (220, 256)
+        assert scrollable_box.view_port_box.viewport.position == (220, 384)
 
     with subtests.test(f"Test that scrolling left results in correct box movement."):
         scrollable_box.horizontal_scrollbar.decrement(0.1)
@@ -158,6 +176,10 @@ def test_scrollable_box_both_directions(
         # Obscured children should not move
         assert child_box.position == (0, 0)
         # View port box should move down.
-        assert scrollable_box.view_port_box.position == (-176, -216)
+        assert scrollable_box.view_port_box.position == (-176, -344)
         # Actual view port should move up.
-        assert scrollable_box.view_port_box.viewport.position == (176, 256)
+        assert scrollable_box.view_port_box.viewport.position == (176, 384)
+
+    with subtests.test(f"Test size of scrollable box is still only the visible area."):
+        assert scrollable_box.rect.width == 400
+        assert scrollable_box.rect.height == 200

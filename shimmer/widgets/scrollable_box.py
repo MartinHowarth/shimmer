@@ -10,11 +10,11 @@ text is visible at once.
 """
 
 from dataclasses import dataclass, replace
-from typing import Optional
+from typing import Optional, Tuple
 
 import cocos
 from .slider import Slider, SliderDefinition, OrientationEnum
-from ..alignment import LeftTop, RightTop, LeftBottom
+from ..alignment import RightTop, LeftBottom
 from ..components.box import BoxDefinition, Box, DynamicSizeBehaviourEnum
 from ..components.view_port_box import ViewPortBox
 
@@ -58,10 +58,31 @@ class ScrollableBox(Box):
         """Create a new ScrollableBox."""
         super(ScrollableBox, self).__init__(definition)
         self.definition: ScrollableBoxDefinition = self.definition
-        self.view_port_box: Optional[ViewPortBox] = None
+
         self.vertical_scrollbar: Optional[Slider] = None
         self.horizontal_scrollbar: Optional[Slider] = None
-        self._update_all()
+
+        width, height = self._calculate_view_port_dimensions()
+        self.view_port_box = ViewPortBox(
+            BoxDefinition(
+                width=width,
+                height=height,
+                dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
+            )
+        )
+        self.add_to_self(self.view_port_box)
+
+        if self.definition.vertically_scrollable:
+            self.vertical_scrollbar = self._create_vertical_slider()
+            self.add_to_self(self.vertical_scrollbar)
+            # Start with the slider at the top as this is usually the default for vertical sliders.
+            self.vertical_scrollbar.value = self.definition.slider_definition.maximum
+
+        if self.definition.horizontally_scrollable:
+            self.horizontal_scrollbar = self._create_horizontal_slider()
+            self.add_to_self(self.horizontal_scrollbar)
+
+        self.arrange_children()
 
     def add(
         self,
@@ -79,6 +100,7 @@ class ScrollableBox(Box):
         See Box.add for parameter details.
         """
         self.view_port_box.add(child, z, name, no_resize)
+        self.arrange_children()
 
     def remove(
         self, child: cocos.cocosnode.CocosNode, no_resize: bool = False,
@@ -111,22 +133,42 @@ class ScrollableBox(Box):
 
     def on_size_change(self):
         """When the size of this box changes, update its components to account for the change."""
+        width, height = self._calculate_view_port_dimensions()
+        self.view_port_box.set_size(width, height)
         super(ScrollableBox, self).on_size_change()
-        self._update_all()
 
-    def _update_all(self):
-        """Update all components of this ScrollableBox widget."""
-        self._create_view_port_box()
-        self._update_sliders()
+    def arrange_children(self):
+        if self.horizontal_scrollbar is not None:
+            self.horizontal_scrollbar.position = (0, 0)
+            # Pretend to scroll to force the actual viewport positioning to be handled for us.
+            self.on_horizontal_scroll(self.horizontal_scrollbar.value)
+        if self.vertical_scrollbar is not None:
+            if self.horizontal_scrollbar is not None:
+                self.vertical_scrollbar.align_anchor_with_other_anchor(
+                    self.horizontal_scrollbar, RightTop, LeftBottom
+                )
+            else:
+                self.vertical_scrollbar.x = (
+                    self.rect.width - self.definition.slider_definition.width
+                )
+            # Pretend to scroll to force the actual viewport positioning to be handled for us.
+            self.on_vertical_scroll(self.vertical_scrollbar.value)
+        super(ScrollableBox, self).arrange_children()
 
-    def _create_view_port_box(self):
-        """Create the view port that is used to display the contents of this scrollable box."""
+    def _calculate_view_port_dimensions(self) -> Tuple[int, int]:
+        """
+        Create the view port that is used to display the contents of this scrollable box.
+
+        Note: This will be used as the dimensions of the actual viewport, not the parent
+              ViewPortBox.
+        """
         if (
             self.definition.horizontally_scrollable
             and self.definition.vertically_scrollable
         ):
-            height = self.rect.height - self.definition.slider_definition.height
-            width = self.rect.width - self.definition.slider_definition.width
+            # Use max to ensure we don't end up with a negative size.
+            height = max(self.rect.height - self.definition.slider_definition.height, 0)
+            width = max(self.rect.width - self.definition.slider_definition.width, 0)
         elif (
             self.definition.horizontally_scrollable
             and not self.definition.vertically_scrollable
@@ -140,79 +182,47 @@ class ScrollableBox(Box):
             height = self.rect.height
             width = None
         else:
-            width, height = self.rect.width, self.rect.height
+            width, height = None, None
 
-        if self.view_port_box is None:
-            self.view_port_box = ViewPortBox(
-                BoxDefinition(
-                    width=width,
-                    height=height,
-                    dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
-                )
-            )
-            self.add_to_self(self.view_port_box)
-        else:
-            # TODO consider moving many/all re-creates to use set_size instead.
-            self.view_port_box.set_size(width, height)
+        return width, height
 
-        self.view_port_box.align_anchor_with_other_anchor(self, LeftTop)
-
-    def _update_sliders(self):
-        """Create the sliders that control the view port position."""
-        if self.vertical_scrollbar is not None:
-            vert_value = self.vertical_scrollbar.value
-            self.remove_from_self(self.vertical_scrollbar, no_resize=True)
-        else:
-            vert_value = self.definition.slider_definition.maximum
-        if self.horizontal_scrollbar is not None:
-            horiz_value = self.horizontal_scrollbar.value
-            self.remove_from_self(self.horizontal_scrollbar, no_resize=True)
-        else:
-            horiz_value = self.definition.slider_definition.minimum
-
+    def _create_horizontal_slider(self) -> Optional[Slider]:
+        # Leave space for the other scrollbar so they don't overlap in the corner.
         if self.definition.vertically_scrollable:
-            # Leave space for the other scrollbar so they don't overlap in the corner.
-            if self.definition.horizontally_scrollable:
-                height = self.rect.height - self.definition.slider_definition.height
-            else:
-                height = self.rect.height
+            width = self.rect.width - self.definition.slider_definition.width
+        else:
+            width = self.rect.width
 
-            self.vertical_scrollbar = Slider(
-                replace(
-                    self.definition.slider_definition,
-                    width=self.definition.slider_definition.width,
-                    height=height,
-                    on_change=self.on_vertical_scroll,
-                    orientation=OrientationEnum.vertical,
-                )
+        slider = Slider(
+            replace(
+                self.definition.slider_definition,
+                width=width,
+                height=self.definition.slider_definition.height,
+                on_change=self.on_horizontal_scroll,
+                orientation=OrientationEnum.horizontal,
             )
-            self.add_to_self(self.vertical_scrollbar)
-            self.vertical_scrollbar.align_anchor_with_other_anchor(
-                self, RightTop, LeftTop
-            )
-            self.vertical_scrollbar.value = vert_value
+        )
+        slider.value = self.definition.slider_definition.minimum
+        return slider
 
+    def _create_vertical_slider(self) -> Slider:
+        # Leave space for the other scrollbar so they don't overlap in the corner.
         if self.definition.horizontally_scrollable:
-            # Leave space for the other scrollbar so they don't overlap in the corner.
-            if self.definition.vertically_scrollable:
-                width = self.rect.width - self.definition.slider_definition.width
-            else:
-                width = self.rect.width
+            height = self.rect.height - self.definition.slider_definition.height
+        else:
+            height = self.rect.height
 
-            self.horizontal_scrollbar = Slider(
-                replace(
-                    self.definition.slider_definition,
-                    width=width,
-                    height=self.definition.slider_definition.height,
-                    on_change=self.on_horizontal_scroll,
-                    orientation=OrientationEnum.horizontal,
-                )
+        slider = Slider(
+            replace(
+                self.definition.slider_definition,
+                width=self.definition.slider_definition.width,
+                height=height,
+                on_change=self.on_vertical_scroll,
+                orientation=OrientationEnum.vertical,
             )
-            self.add_to_self(self.horizontal_scrollbar)
-            self.horizontal_scrollbar.align_anchor_with_other_anchor(
-                self, LeftBottom, LeftTop
-            )
-            self.horizontal_scrollbar.value = horiz_value
+        )
+        slider.value = self.definition.slider_definition.minimum
+        return slider
 
     def on_horizontal_scroll(self, slider_value: float) -> None:
         """

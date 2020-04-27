@@ -49,7 +49,7 @@ def test_view_port_box_no_click_through(run_gui, cat_image):
     )
     view_port.add_to_viewport(drag_box)
 
-    assert run_gui(test_view_port_box, view_port)
+    assert run_gui(test_view_port_box_no_click_through, view_port)
 
 
 def test_viewport_box_is_visible(mock_gui, subtests):

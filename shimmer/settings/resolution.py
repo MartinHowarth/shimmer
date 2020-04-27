@@ -93,7 +93,7 @@ class ResolutionDropDownMenu(PopOutMenu):
 
     def set_resolution(self, *_, resolution, **__):
         """Set the game window to be the next possible screen resolution in the cycle."""
-        self.logger.info(f"Setting resolution to {resolution}.")
+        self.info(f"Setting resolution to {resolution}.")
         self.menu_button.set_text(str(resolution))
         set_resolution(resolution)
         return EVENT_HANDLED

@@ -233,6 +233,8 @@ class EditableTextBox(MouseBox):
 
     def on_text(self, text: str) -> Optional[bool]:
         """Called when the user enters text into the text box."""
+        if not self.focus_box.is_focused:
+            return EVENT_UNHANDLED
         if self.definition.on_change is not None:
             self.definition.on_change(self.text)
         return self._caret.on_text(text)

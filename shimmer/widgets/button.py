@@ -100,7 +100,7 @@ class Button(MouseBox):
             self.update_label()
         else:
             # Don't re-create the label unless necessary to save on CPU.
-            self.label.set_text(text)
+            self.label.set_text(self.definition.formatted_text)
 
     def update_label(self):
         """Recreate the button label."""
@@ -125,7 +125,7 @@ class Button(MouseBox):
     def _should_handle_mouse_press(self, buttons: int) -> bool:
         """Whether this button should handle mouse press events."""
         # Also handle if on_release is defined so we can record which mouse button was used.
-        return self._event_handling_enabled() and (
+        return (
             self.definition.on_press is not None
             or self.definition.on_release is not None
             or self.definition.depressed_color is not None
@@ -134,18 +134,15 @@ class Button(MouseBox):
     def _should_handle_mouse_release(self, buttons: int) -> bool:
         """Whether this button should handle mouse release events."""
         # Also handle if on_press is defined so we can record which mouse button was used.
-        return self._event_handling_enabled() and (
-            (
-                self.definition.on_press is not None
-                or self.definition.on_release is not None
-                or self.definition.depressed_color is not None
-            )
-            and bitwise_contains(self._currently_pressed, buttons)
-        )
+        return (
+            self.definition.on_press is not None
+            or self.definition.on_release is not None
+            or self.definition.depressed_color is not None
+        ) and bitwise_contains(self._currently_pressed, buttons)
 
     def _should_handle_mouse_hover(self) -> bool:
         """Whether this button should handle mouse hover and unhover events."""
-        return self._event_handling_enabled() and (
+        return (
             self.definition.on_hover is not None
             or self.definition.on_unhover is not None
             or self.definition.hover_color is not None

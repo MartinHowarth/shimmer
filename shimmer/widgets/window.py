@@ -8,7 +8,7 @@ from ..alignment import (
     CenterBottom,
     RightTop,
 )
-from ..components.box import Box, BoxDefinition
+from ..components.box import Box, BoxDefinition, DynamicSizeBehaviourEnum
 from ..components.box_layout import BoxColumn
 from ..components.draggable_box import DragParentBox, DraggableBoxDefinition
 from ..components.focus import make_focusable, VisualAndKeyboardFocusBox
@@ -97,29 +97,53 @@ class Window(MouseBox):
 
         super(Window, self).__init__(definition)
 
-        self._title: Optional[TextBox] = None
-        self._title_boxes: Dict[str, Box] = {}
-        self._title_bar_background: Optional[Box] = None
-        self.focus_box: Optional[VisualAndKeyboardFocusBox] = make_focusable(self)
+        self._title: Optional[TextBox] = self._create_title()
+        self._title_boxes: Dict[str, Box] = {
+            "close": self._create_close_button(),
+            "drag": self._create_drag_zone(),
+        }
+        self._title_bar_background: Box = self._create_title_bar_background()
+        self.focus_box: VisualAndKeyboardFocusBox = make_focusable(self)
 
         # Add the inner box, which is the main body of the window excluding the title bar.
         self.body = BoxColumn()
         self.add(self.body)
 
-        self.update_all()
+        self.arrange_children()
+
+    @property
+    def close_button(self) -> CloseButton:
+        """Get the close button of this window."""
+        return self._title_boxes["close"]
+
+    @property
+    def drag_box(self) -> DragParentBox:
+        """Get the DraggableBox of this window."""
+        return self._title_boxes["drag"]
 
     def make_focused(self):
         """Make this window the current focus target."""
-        if self.focus_box is not None:
-            self.focus_box.take_focus()
+        self.focus_box.take_focus()
 
-    def update_all(self):
-        """Update or re-create all of the components that make up the window."""
-        self._update_close_button()
-        self._update_title()
-        self._update_title_bar_background()
-        self.update_background()
-        self._update_drag_zone()
+    def arrange_children(self):
+        self.close_button.align_anchor_with_other_anchor(
+            self,
+            RightTop,
+            spacing=(
+                -self.definition.title_bar_button_spacing,
+                -self.definition.title_bar_button_spacing,
+            ),
+        )
+        if self._title is not None:
+            self._title.align_anchor_with_other_anchor(self, LeftTop, spacing=(10, 0))
+        self._title_bar_background.align_anchor_with_other_anchor(self, LeftTop)
+        self.drag_box.align_anchor_with_other_anchor(
+            self, LeftTop,
+        )
+        self.body.align_anchor_with_other_anchor(
+            self, CenterBottom, spacing=(0, self.definition.padding)
+        )
+        super(Window, self).arrange_children()
 
     def update_rect(self):
         """
@@ -151,14 +175,6 @@ class Window(MouseBox):
             self._rect.set_size((self._width, self._height))
             self.on_size_change()
 
-    def on_child_size_changed(self):
-        """Called when a child of the window changes size."""
-        super(Window, self).on_child_size_changed()
-        self.update_all()
-        self.body.align_anchor_with_other_anchor(
-            self, CenterBottom, spacing=(0, self.definition.padding)
-        )
-
     @property
     def minimum_title_bar_width(self) -> int:
         """
@@ -189,11 +205,8 @@ class Window(MouseBox):
             ]
         )
 
-    def _update_title(self):
+    def _create_title(self) -> Optional[TextBox]:
         """Recreate the title."""
-        if self._title is not None:
-            self.remove(self._title, no_resize=True)
-
         if self.definition.title is None:
             return
 
@@ -201,26 +214,24 @@ class Window(MouseBox):
             text=self.definition.title, height=self.definition.title_bar_height,
         )
 
-        self._title = TextBox(title_definition)
-        self.add(self._title, no_resize=True)
-        self._title.align_anchor_with_other_anchor(self, LeftTop, spacing=(10, 0))
+        title = TextBox(title_definition)
+        self.add(title, no_resize=True)
+        return title
 
-    def _update_title_bar_background(self):
+    def _create_title_bar_background(self) -> Box:
         """Redefine the background color of the title bar."""
-        if self._title_bar_background is not None:
-            self.remove(self._title_bar_background, no_resize=True)
-
-        self._title_bar_background = Box(
+        title_background = Box(
             BoxDefinition(
-                width=self.rect.width,
+                width=None,
                 height=self.title_bar_height,
                 background_color=self.definition.title_bar_color,
+                dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
             )
         )
-        self.add(self._title_bar_background, z=-1, no_resize=True)
-        self._title_bar_background.align_anchor_with_other_anchor(self, LeftTop)
+        self.add(title_background, z=-1, no_resize=True)
+        return title_background
 
-    def _update_close_button(self):
+    def _create_close_button(self) -> CloseButton:
         """Redefine the window close button."""
         definition = replace(
             CloseButtonDefinitionBase,
@@ -229,27 +240,10 @@ class Window(MouseBox):
             on_release=self.definition.on_close,
         )
         close_button = CloseButton(definition)
-        self._update_title_bar_box("close", close_button)
-        self.close_button.align_anchor_with_other_anchor(
-            self,
-            RightTop,
-            spacing=(
-                -self.definition.title_bar_button_spacing,
-                -self.definition.title_bar_button_spacing,
-            ),
-        )
+        self.add(close_button, no_resize=True)
+        return close_button
 
-    @property
-    def close_button(self) -> CloseButton:
-        """Get the close button of this window."""
-        return self._title_boxes["close"]
-
-    @property
-    def drag_box(self) -> DragParentBox:
-        """Get the DraggableBox of this window."""
-        return self._title_boxes["drag"]
-
-    def _update_drag_zone(self):
+    def _create_drag_zone(self) -> DragParentBox:
         """
         Redefine the draggable area of the title bar.
 
@@ -257,26 +251,14 @@ class Window(MouseBox):
         the leftmost title bar button.
         """
         drag_box_definition = DraggableBoxDefinition(
-            width=self.rect.width - self._leftmost_title_bar_button_position,
+            width=None,
             height=self.title_bar_height,
+            dynamic_size_behaviour=DynamicSizeBehaviourEnum.match_parent,
         )
-        self._update_title_bar_box("drag", DragParentBox(drag_box_definition))
-        self._title_boxes["drag"].align_anchor_with_other_anchor(
-            self, LeftTop,
-        )
-
-    def _update_title_bar_box(self, name: str, box: Box) -> None:
-        """
-        Create or re-create a title bar Box known by the given name.
-
-        :param name: Internal identifier of the Box.
-        :param box: New Box node to place in the title bar.
-        """
-        if name in self._title_boxes.keys():
-            self.remove(self._title_boxes[name], no_resize=True)
-
-        self.add(box, no_resize=True)
-        self._title_boxes[name] = box
+        drag_box = DragParentBox(drag_box_definition)
+        # Add with z=-1 so the drag box is behind the title bar buttons.
+        self.add(drag_box, no_resize=True, z=-1)
+        return drag_box
 
     def add_child_to_body(self, child: Box) -> None:
         """

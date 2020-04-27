@@ -224,7 +224,7 @@ class FocusBox(MouseBox):
             self._is_focused = False
             if self.definition.on_lose_focus is not None:
                 self.definition.on_lose_focus()
-            self.logger.info(f"Losing focus on behalf of parent: {self.parent}")
+            self.info(f"Losing focus on behalf of parent: {self.parent}")
             return True
         return False
 

@@ -199,7 +199,7 @@ class DraggableBox(MouseBox):
 
     def _should_handle_mouse_drag(self) -> bool:
         """Should only handle drag is this box currently is being dragged."""
-        return self._event_handling_enabled() and self._currently_dragging
+        return self._currently_dragging
 
     def start_dragging(
         self, box: "MouseBox", x: int, y: int, buttons: int, modifiers: int,

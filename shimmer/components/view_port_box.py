@@ -30,7 +30,6 @@ class ViewPortBox(Box):
 
     def __init__(self, definition: BoxDefinition):
         """Create a new ViewPortBox."""
-        # Apply the color to the actual viewport box, not this parent holder.
         super(ViewPortBox, self).__init__(
             BoxDefinition(dynamic_size_behaviour=DynamicSizeBehaviourEnum.fit_children)
         )
@@ -47,6 +46,8 @@ class ViewPortBox(Box):
         self._old_scissor_args: Tuple[int, int, int, int] = (gl.GLint * 4)()
 
     def set_size(self, width: Optional[int], height: Optional[int]) -> None:
+        """Set the size of the viewport."""
+        self.trace(f"Setting viewport size: {width=}, {height=}")
         self.viewport.set_size(width, height)
 
     def add(

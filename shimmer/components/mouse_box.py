@@ -287,7 +287,7 @@ class MouseBox(ActiveBox):
         :param buttons: Int indicating which mouse buttons are pressed (see pyglet).
         :return: True if this Box should handle the mouse click press.
         """
-        return self._event_handling_enabled() and (
+        return (
             self.definition.on_press is not None
             or self.definition.on_press_outside is not None
         )
@@ -302,9 +302,8 @@ class MouseBox(ActiveBox):
         :param buttons: Int indicating which mouse buttons are pressed (see pyglet).
         :return: True if this Box should handle the mouse click release.
         """
-        return self._event_handling_enabled() and (
-            self.definition.on_release is not None
-            and bitwise_contains(self._currently_pressed, buttons)
+        return self.definition.on_release is not None and bitwise_contains(
+            self._currently_pressed, buttons
         )
 
     def _should_handle_mouse_hover(self) -> bool:
@@ -313,7 +312,7 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle mouse hover and unhover events.
         """
-        return self._event_handling_enabled() and (
+        return (
             self.definition.on_hover is not None
             or self.definition.on_unhover is not None
         )
@@ -324,7 +323,7 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle mouse motion events.
         """
-        return self._event_handling_enabled() and self.definition.on_motion is not None
+        return self.definition.on_motion is not None
 
     def _should_handle_mouse_drag(self) -> bool:
         """
@@ -332,9 +331,7 @@ class MouseBox(ActiveBox):
 
         :return: True if this Box should handle the mouse drag event.
         """
-        return self._event_handling_enabled() and (
-            self._currently_dragging and self.definition.on_drag is not None
-        )
+        return self._currently_dragging and self.definition.on_drag is not None
 
     def should_handle_coord(self, x: int, y: int) -> bool:
         """

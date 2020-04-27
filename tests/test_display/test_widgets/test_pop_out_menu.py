@@ -58,13 +58,13 @@ def test_drop_down_menu_run_gui(run_gui, pop_out_menu_items):
     assert run_gui(test_drop_down_menu_run_gui, text_box, menu)
 
 
-def test_nested_pop_out_menu(run_gui, pop_out_menu_items):
+def test_nested_pop_out_menu(run_gui, updatable_text_box):
     """A tree of pop-out menus should be shown and interactable."""
-    menu_items, text_box = pop_out_menu_items
+    text_box, update_text_box = updatable_text_box
 
     def update_text_callback(new_text):
         def mouse_event(*_, **__):
-            text_box.set_text(new_text)
+            update_text_box(new_text)
 
         return mouse_event
 
@@ -72,7 +72,7 @@ def test_nested_pop_out_menu(run_gui, pop_out_menu_items):
         PopOutMenu(
             ExpandRightMenuDefinition(
                 name="Choose an integer",
-                items=create_simple_menu_items(update_text_callback, 3),
+                items=create_simple_menu_items(update_text_callback, 5),
             )
         )
         for _ in range(3)
@@ -124,6 +124,10 @@ def test_drop_down_menu(mock_gui):
     menu.menu_button.is_toggled = True
     assert menu.item_layout.x == menu.menu_button.x
     assert menu.item_layout.y == -menu.item_layout.rect.height
+    assert menu.rect.width == menu.item_layout.rect.width
+    assert (
+        menu.rect.height == menu.menu_button.rect.height + menu.item_layout.rect.height
+    )
 
 
 def test_pop_up_menu(mock_gui):
@@ -134,6 +138,10 @@ def test_pop_up_menu(mock_gui):
     menu.menu_button.is_toggled = True
     assert menu.item_layout.x == menu.menu_button.x
     assert menu.item_layout.y == menu.menu_button.rect.height
+    assert menu.rect.width == menu.item_layout.rect.width
+    assert (
+        menu.rect.height == menu.menu_button.rect.height + menu.item_layout.rect.height
+    )
 
 
 def test_expand_right_menu(mock_gui):
@@ -147,6 +155,8 @@ def test_expand_right_menu(mock_gui):
         menu.item_layout.y
         == menu.menu_button.rect.height - menu.item_layout.rect.height
     )
+    assert menu.rect.width == menu.menu_button.rect.width + menu.item_layout.rect.width
+    assert menu.rect.height == menu.item_layout.rect.height
 
 
 def test_expand_left_menu(mock_gui):
@@ -160,3 +170,5 @@ def test_expand_left_menu(mock_gui):
         menu.item_layout.y
         == menu.menu_button.rect.height - menu.item_layout.rect.height
     )
+    assert menu.rect.width == menu.menu_button.rect.width + menu.item_layout.rect.width
+    assert menu.rect.height == menu.item_layout.rect.height
